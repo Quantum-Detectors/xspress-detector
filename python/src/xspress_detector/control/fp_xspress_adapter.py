@@ -10,7 +10,7 @@ import asyncio
 import time
 
 from odin_data.control.odin_data_adapter import OdinDataAdapter
-from odin_data.control.fp_compression_adapter import FPCompressionAdapter
+from odin_data.control.frame_processor_adapter import FrameProcessorAdapter
 from odin.adapters.adapter import (
     ApiAdapterResponse,
     request_types,
@@ -27,7 +27,7 @@ def bool_from_string(value):
     return bool_value
 
 
-class FPXspressAdapter(FPCompressionAdapter):
+class FPXspressAdapter(FrameProcessorAdapter):
     """
     FPXspressAdapter class
 
