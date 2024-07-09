@@ -189,4 +189,4 @@ class FPXspressAdapter(FrameProcessorAdapter):
                     "config/hdf/dataset/data",
                     "config/hdf/dataset/{}".format(dataset) + "/{}".format(client),
                 )
-                super(FPCompressionAdapter.__base__, self).put(dataset_path, request)
+                super(FrameProcessorAdapter.__base__, self).put(dataset_path, request)
