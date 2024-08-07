@@ -4,7 +4,11 @@
         "decoder_path": "prefix/lib",
         "rx_type": "zmq",
         "rx_address": "127.0.0.1",
-        "rx_ports": "15151,"
+        "rx_ports": "15151,",
+        "shared_buffer_name": "odin_buf_2",
+        "max_buffer_mem": 1048576000,
+        "frame_ready_endpoint": "tcp://127.0.0.1:10011",
+        "frame_release_endpoint": "tcp://127.0.0.1:10012"
     },
     {
         "decoder_config": {
