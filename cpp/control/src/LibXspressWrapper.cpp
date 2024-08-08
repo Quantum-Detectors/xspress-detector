@@ -1017,7 +1017,7 @@ int LibXspressWrapper::histogram_memcpy(uint32_t *buffer,
     circ_buffer = (bool)(Xsp3Sys[xsp_handle_].run_flags & XSP3_RUN_FLAGS_CIRCULAR_BUFFER);
 
     if (Xsp3Sys[xsp_handle_].features.generation == XspressGen3Mini){
-      xsp_status = xsp3_histogram_read4d(xsp_handle_, buffer, 0, 0, start_chan, tf, num_eng, num_chan, num_tf)
+      xsp_status = xsp3_histogram_read4d(xsp_handle_, buffer, 0, 0, start_chan, tf, num_eng, num_aux, num_chan, num_tf)
       // xsp_status = xsp3m_histogram_read_frames(xsp_handle_, buffer, 0, start_chan, tf, num_eng, num_chan, num_tf);
       if (xsp_status < XSP3_OK){
         checkErrorCode("xsp3_histogram_read_frames", xsp_status);
