@@ -179,10 +179,10 @@ int LibXspressWrapper::configure_mca(int num_cards,                 // Number of
         XSP3_CLK_FLAGS_MASTER | XSP3_CLK_FLAGS_NO_DITHER,
         0
       );
-      checkErrorCode(status, "Error configuring X3X2 clocks");
+      checkErrorCode("Error configuring X3X2 clocks", status);
     }
     status = xsp3_set_sync_mode(xsp_handle_, XSP3_SYNC_MODE(XSP3_SYNC_MIDPLANE), 0, 0);
-    checkErrorCode(status, "Error configuring X3X2 sync mode");
+    checkErrorCode("Error configuring X3X2 sync mode", status);
   }
 
   return status;
