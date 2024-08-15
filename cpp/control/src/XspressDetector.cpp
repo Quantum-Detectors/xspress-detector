@@ -215,7 +215,7 @@ int XspressDetector::setupClocks()
 {
   int status = XSP_STATUS_OK;
   if (checkConnected()){
-    status = detector_->setup_clocks(num_cards_);
+    status = detector_->setup_clocks(xsp_num_cards_);
     if (status != XSP_STATUS_OK)
     {
       setErrorString("Failed to configure card clocks");
