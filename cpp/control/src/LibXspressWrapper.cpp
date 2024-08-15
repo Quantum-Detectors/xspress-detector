@@ -337,6 +337,7 @@ int LibXspressWrapper::get_clock_period(double& clock_period)
   LOG4CXX_DEBUG_LEVEL(1, logger_, "Xspress wrapper calling xsp3_get_clock_period");
   // Read the clock period
   clock_period = xsp3_get_clock_period(xsp_handle_, 0);
+  LOG4CXX_DEBUG_LEVEL(1, logger_, "Got clock period: " << clock_period << "Hz");
   return status;
 }
 
