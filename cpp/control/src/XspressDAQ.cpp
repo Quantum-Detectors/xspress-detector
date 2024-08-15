@@ -251,6 +251,7 @@ void XspressDAQ::controlTask()
       int32_t frames_read = 0;
       while ((num_frames < total_frames) && acq_running_){
         int status = detector_->get_num_frames_read(&num_frames);
+        LOG4CXX_DEBUG_LEVEL(1, logger_, "Current frame: " << num_frames);
         if (status == XSP_STATUS_OK){
           uint32_t frames_to_read = num_frames - frames_read;
           if (frames_to_read > 0){
