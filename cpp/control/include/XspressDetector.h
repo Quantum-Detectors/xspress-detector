@@ -61,6 +61,7 @@ public:
   bool checkConnected();
   int disconnect();
   int setupChannels();
+  int setupClocks();
   int enableDAQ();
   int checkSaveDir(const std::string& dir_name);
   int saveSettings();

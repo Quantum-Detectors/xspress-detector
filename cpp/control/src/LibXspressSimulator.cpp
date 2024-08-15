@@ -957,4 +957,10 @@ int LibXspressSimulator::set_trigger_input(bool list_mode)
   return XSP_STATUS_OK;
 }
 
+int LibXspressSimulator::setup_clocks(int num_cards)
+{
+  // This is a no op for the simulator
+  return XSP_STATUS_OK;
+}
+
 } /* namespace Xspress */

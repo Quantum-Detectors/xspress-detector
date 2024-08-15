@@ -824,26 +824,6 @@ int LibXspressWrapper::setTriggerMode(int frames,
   int itfg_trig_mode;
   int xsp_status = XSP3_OK;
 
-  // Check the clock signal for X3X2 systems
-  if (status == 0 && xsp3_is_xsp3m_plus(0) == 1)
-  {
-    LOG4CXX_DEBUG_LEVEL(1, logger_, "Xspress wrapper configuring X3X2 midplane clock");
-    for (unsigned int card = 0; card < num_cards; card++)
-    {
-      status = xsp3_clocks_setup(
-        xsp_handle_,
-        card,
-        XSP4_CLK_SRC_MIDPLN_LMK61E2,
-        XSP3_CLK_FLAGS_MASTER | XSP3_CLK_FLAGS_NO_DITHER,
-        0
-      );
-      if (status < 0) checkErrorCode("Error configuring X3X2 clocks", status);
-    }
-    LOG4CXX_DEBUG_LEVEL(1, logger_, "Xspress wrapper configuring X3X2 sync mode");
-    status = xsp3_set_sync_mode(xsp_handle_, XSP3_SYNC_MODE(XSP3_SYNC_MIDPLANE), 0, 0);
-    checkErrorCode("Error configuring X3X2 sync mode", status);
-  }
-
   LOG4CXX_DEBUG_LEVEL(1, logger_, "Xspress wrapper calling xsp3_itfg_setup and xsp3_set_timing");  
 
   status = mapTimeFrameSource(&xsp_trigger_mode, &itfg_trig_mode, trigger_mode, debounce, invert_f0, invert_veto);
@@ -1200,6 +1180,52 @@ int LibXspressWrapper::set_trigger_input(bool list_mode)
     }
   }
 
+  return status;
+}
+
+/**
+ * 
+ * @brief This is used to check the clock signals are configured correctly.
+ * 
+ * This is important for X3X2 (Xspress 3X Mark 2) systems as the midplane
+ * is used as the clock source.
+ * 
+ * @param[in] num_cards Number of cards
+ * @return int Status whether we configured successfully or not
+ */
+int LibXspressWrapper::setup_clocks(int num_cards)
+{
+  int status = XSP_STATUS_OK;
+  int xsp_status;
+
+  // Need to set up clocks specifically for X3X2 models for triggering to work
+  if (xsp3_is_xsp3m_plus(0) == 1)
+  {
+    LOG4CXX_DEBUG_LEVEL(1, logger_, "Xspress wrapper configuring X3X2 midplane clock");
+    for (unsigned int card = 0; card < num_cards; card++)
+    {
+      xsp_status = xsp3_clocks_setup(
+        xsp_handle_,
+        card,
+        XSP4_CLK_SRC_MIDPLN_LMK61E2,
+        XSP3_CLK_FLAGS_MASTER | XSP3_CLK_FLAGS_NO_DITHER,
+        0
+      );
+      // < 0 for error, 0 for Xspress 3 success and clock frequency for other models
+      if (xsp_status < 0)
+      {
+        checkErrorCode("Error configuring X3X2 clocks", xsp_status);
+        status = XSP_STATUS_ERROR;
+      }
+    }
+    LOG4CXX_DEBUG_LEVEL(1, logger_, "Xspress wrapper configuring X3X2 sync mode");
+    xsp_status = xsp3_set_sync_mode(xsp_handle_, XSP3_SYNC_MODE(XSP3_SYNC_MIDPLANE), 0, 0);
+    if (xsp_status != XSP3_OK)
+    {
+      checkErrorCode("Error configuring X3X2 sync mode", xsp_status);
+      status = XSP_STATUS_ERROR;
+    }
+  }
   return status;
 }
 

@@ -211,6 +211,21 @@ int XspressDetector::setupChannels()
   return status;
 }
 
+int XspressDetector::setupClocks()
+{
+  int status = XSP_STATUS_OK;
+  if (checkConnected()){
+    status = detector_->setup_clocks(cards_connected_);
+    if (status != XSP_STATUS_OK)
+    {
+      setErrorString("Failed to configure card clocks");
+    }
+  } else {
+    LOG4CXX_INFO(logger_, "Cannot set up clocks as not connected");
+  }
+  return status;
+}
+
 int XspressDetector::enableDAQ()
 {
   int status = XSP_STATUS_OK;

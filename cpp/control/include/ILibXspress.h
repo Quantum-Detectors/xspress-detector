@@ -183,6 +183,7 @@ public:
   virtual int set_window(int chan, int sca, int llm, int hlm) = 0;
   virtual int set_sca_thresh(int chan, int value) = 0;
   virtual int set_trigger_input(bool list_mode) = 0;
+  virtual int setup_clocks(int num_cards) = 0;
 
   static const int runFlag_MCA_SPECTRA_;
   static const int runFlag_SCALERS_ONLY_;
