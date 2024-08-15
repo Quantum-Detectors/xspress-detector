@@ -169,7 +169,7 @@ int LibXspressWrapper::configure_mca(int num_cards,                 // Number of
   // Check the clock signal for X3X2 systems
   if (status == 0 && xsp3_is_xsp3m_plus(0) == 1)
   {
-    LOG4CXX_DEBUG_LEVEL(1, logger_, "Xspress wrapper configuring X3X2 midplane clocks");
+    LOG4CXX_DEBUG_LEVEL(1, logger_, "Xspress wrapper configuring X3X2 midplane clock");
     for (unsigned int card = 0; card < num_cards; card++)
     {
       status = xsp3_clocks_setup(
@@ -179,8 +179,9 @@ int LibXspressWrapper::configure_mca(int num_cards,                 // Number of
         XSP3_CLK_FLAGS_MASTER | XSP3_CLK_FLAGS_NO_DITHER,
         0
       );
-      checkErrorCode("Error configuring X3X2 clocks", status);
+      if (status < 0) checkErrorCode("Error configuring X3X2 clocks", status);
     }
+    LOG4CXX_DEBUG_LEVEL(1, logger_, "Xspress wrapper configuring X3X2 sync mode");
     status = xsp3_set_sync_mode(xsp_handle_, XSP3_SYNC_MODE(XSP3_SYNC_MIDPLANE), 0, 0);
     checkErrorCode("Error configuring X3X2 sync mode", status);
   }
