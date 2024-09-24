@@ -870,16 +870,16 @@ class XspressDetector(object):
 
         # This seems to help when dealing with detectors that don't have 8 channels.
         # Apparently when the detector has a number of channels different from that defined in 'DEFAULT_MAX_CHANNELS',
-        # at XspressDetector.h, we have some problems when trying to connect to it straigh away using the reconfigure button.
+        # at XspressDetector.h, we have some problems when trying to connect to it straight away using the reconfigure button.
         await self.reset()
         await asyncio.sleep(FR_INIT_TIME[mode])
 
         resp = await self._async_client.send_recv(self.configuration.get())
         # resp = await self._put(MessageType.CONFIG, XspressDetectorStr.CONFIG_CONFIG_PATH, self.settings_paths[mode])
         resp = await self._put(MessageType.CMD, XspressDetectorStr.CMD_DISCONNECT, 1)
-        # TODO: Ben - check this is correct for X3X2 units (i.e. don't add an additional MCA channel)
+        # TODO: Ben - check this is correct for X3X2 units
         # If so then we are going to need to work out whether the Xspress system is a Mk2 or not (or non-X?)
-        chans = self.mca_channels # if mode == XSPRESS_MODE_MCA else self.mca_channels + 1
+        chans = self.mca_channels if mode == XSPRESS_MODE_MCA else self.mca_channels + int(2*self.num_cards)
         await self._put(
             MessageType.CONFIG, XspressDetectorStr.CONFIG_MAX_CHANNELS, chans
         )
@@ -951,6 +951,7 @@ class XspressDetector(object):
         self.logger.critical(debug_method())
         self.max_channels = max_channels
         self.mca_channels = max_channels
+        self.num_cards = num_cards
         self.max_spectra = max_spectra
         self.run_flags = run_flags
         self.fr_clients = [
