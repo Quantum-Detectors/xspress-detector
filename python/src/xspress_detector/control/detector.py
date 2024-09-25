@@ -877,9 +877,9 @@ class XspressDetector(object):
         resp = await self._async_client.send_recv(self.configuration.get())
         # resp = await self._put(MessageType.CONFIG, XspressDetectorStr.CONFIG_CONFIG_PATH, self.settings_paths[mode])
         resp = await self._put(MessageType.CMD, XspressDetectorStr.CMD_DISCONNECT, 1)
-        # TODO: Ben - check this is correct for X3X2 units
+        # TODO: Ben - check this is correct for X3X2 units (i.e. ignore marker channels)
         # If so then we are going to need to work out whether the Xspress system is a Mk2 or not (or non-X?)
-        chans = self.mca_channels if mode == XSPRESS_MODE_MCA else self.mca_channels + 1
+        chans = self.mca_channels #  if mode == XSPRESS_MODE_MCA else self.mca_channels + 1
         await self._put(
             MessageType.CONFIG, XspressDetectorStr.CONFIG_MAX_CHANNELS, chans
         )
