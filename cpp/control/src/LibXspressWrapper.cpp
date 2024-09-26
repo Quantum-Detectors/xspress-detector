@@ -196,7 +196,7 @@ int LibXspressWrapper::configure_list(int num_cards,                 // Number o
     debug,                                  // Enable debug messages
     0,                                      // Card index
     (Xsp3Init)do_init,                      // Initialisation flags
-    Xsp3mRd_Auto,                           // Xsp3mRd_Auto
+    Xsp3mRd_SendHistList,                   // Configure readout for list mode
     XspressReal                             // XspressReal
   );
 
@@ -1176,6 +1176,7 @@ int LibXspressWrapper::set_trigger_input(bool list_mode)
   memset(&trig_mux, 0, sizeof(Xsp3TriggerMux));
 
   if (list_mode){
+    // TODO: Ben: check if these are correct
     trig_mux.trig_sel[0] = 0;
     trig_mux.trig_sel[1] = 2;
     trig_mux.trig_sel[2] = 1;

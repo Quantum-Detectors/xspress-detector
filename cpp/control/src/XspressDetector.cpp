@@ -560,6 +560,7 @@ int XspressDetector::sendSoftwareTrigger()
 {
   int status = XSP_STATUS_OK;
   if (acquiring_){
+    // TODO: BEN: handle what happens in list mode if required
     if (xsp_trigger_mode_ == TM_SOFTWARE){
       status = detector_->histogram_continue(0);
       status |= detector_->histogram_pause(0);
