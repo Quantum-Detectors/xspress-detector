@@ -864,7 +864,11 @@ int LibXspressWrapper::get_num_frames_read(int32_t *frames)
     if (flags != 0){
       // TODO: check what to do about this permanently - ignore playback under-run which happens on Mk2 a lot?
       // If so, should identify whether mark 2 and then check ignore
-      // if (flags == Xsp3ErrFlag::Xsp3ErrFlag_Playback) return status;
+      if (flags == Xsp3ErrFlag::Xsp3ErrFlag_Playback)
+      {
+        LOG4CXX_DEBUG_LEVEL(2, logger_, "Got playback under-run (ignoring)");
+        return status;
+      }
 
       std::stringstream ss;
       ss << "xsp3_scaler_check_progress_details reported error flags [" << flags << "]";
