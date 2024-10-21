@@ -154,7 +154,7 @@ int LibXspressWrapper::configure_mca(int num_cards,                 // Number of
     port,                                   // Base port number override (-1 does not override)
     NULL,                                   // Base MAC override (NULL does not override)
     max_channels,                           // Set the maximum number of channels
-    1,                                      // Don't create scope data module
+    1,                                      // Create scope data module
     NULL,                                   // Override scope data module filename
     debug,                                  // Enable debug messages
     verbose                                 // Enable verbose debug messages
@@ -191,7 +191,7 @@ int LibXspressWrapper::configure_list(int num_cards,                 // Number o
     port,                                   // Base port number override (-1 does not override)
     NULL,                                   // Base MAC override (NULL does not override)
     max_channels,                           // Set the maximum number of channels
-    1,                                      // Don't create scope data module
+    1,                                      // Create scope data module
     NULL,                                   // Override scope data module filename
     debug,                                  // Enable debug messages
     0,                                      // Card index
@@ -864,7 +864,7 @@ int LibXspressWrapper::get_num_frames_read(int32_t *frames)
     if (flags != 0){
       // TODO: check what to do about this permanently - ignore playback under-run which happens on Mk2 a lot?
       // If so, should identify whether mark 2 and then check ignore
-      if (flags == Xsp3ErrFlag::Xsp3ErrFlag_Playback) return status;
+      // if (flags == Xsp3ErrFlag::Xsp3ErrFlag_Playback) return status;
 
       std::stringstream ss;
       ss << "xsp3_scaler_check_progress_details reported error flags [" << flags << "]";
@@ -1209,22 +1209,20 @@ int LibXspressWrapper::setup_clocks(int num_cards)
   if (xsp3_is_xsp3m_plus(0) == 1)
   {
     LOG4CXX_DEBUG_LEVEL(1, logger_, "Xspress wrapper configuring X3X2 midplane clock");
-    for (unsigned int card = 0; card < num_cards; card++)
+    xsp_status = xsp3_clocks_setup(
+      xsp_handle_,
+      -1,
+      XSP4_CLK_SRC_MIDPLN_LMK61E2,
+      XSP3_CLK_FLAGS_NO_DITHER,
+      0
+    );
+    // < 0 for error, 0 for Xspress 3 success and clock frequency for other models
+    if (xsp_status < 0)
     {
-      xsp_status = xsp3_clocks_setup(
-        xsp_handle_,
-        card,
-        XSP4_CLK_SRC_MIDPLN_LMK61E2,
-        XSP3_CLK_FLAGS_MASTER | XSP3_CLK_FLAGS_NO_DITHER,
-        0
-      );
-      // < 0 for error, 0 for Xspress 3 success and clock frequency for other models
-      if (xsp_status < 0)
-      {
-        checkErrorCode("Error configuring X3X2 clocks", xsp_status);
-        status = XSP_STATUS_ERROR;
-      }
+      checkErrorCode("Error configuring X3X2 clocks", xsp_status);
+      status = XSP_STATUS_ERROR;
     }
+
     LOG4CXX_DEBUG_LEVEL(1, logger_, "Xspress wrapper configuring X3X2 sync mode");
     xsp_status = xsp3_set_sync_mode(xsp_handle_, XSP3_SYNC_MODE(XSP3_SYNC_MIDPLANE), 0, 0);
     if (xsp_status != XSP3_OK)
