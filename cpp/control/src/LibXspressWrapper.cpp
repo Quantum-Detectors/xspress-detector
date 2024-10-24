@@ -1008,11 +1008,6 @@ int LibXspressWrapper::histogram_memcpy(uint32_t *buffer,
 {
   int status = XSP_STATUS_OK;
   int xsp_status;
-  uint32_t twrap;
-  uint32_t *frame_ptr;
-  int rc;
-  int thisPath, chanIdx;
-  bool circ_buffer;
 
   if (xsp_handle_ < 0 || xsp_handle_ >= XSP3_MAX_PATH || !Xsp3Sys[xsp_handle_].valid){
     checkErrorCode("histogram_memcpy", XSP3_INVALID_PATH);
@@ -1031,14 +1026,19 @@ int LibXspressWrapper::histogram_memcpy(uint32_t *buffer,
         << num_eng << ", " << num_aux << ", " << num_chan << ", " << num_tf
       );
       // int xsp3_histogram_read4d(int path, u_int32_t *buffer, unsigned eng, unsigned aux, unsigned chan, unsigned tf, unsigned num_eng, unsigned num_aux, unsigned num_chan, unsigned num_tf)
-      xsp_status = xsp3m_histogram_read_frames(xsp_handle_, buffer, 0, 0, start_chan, tf, num_eng, num_aux, num_chan, num_tf);
+      //xsp_status = xsp3_histogram_read4d(xsp_handle_, buffer, 0, 0, start_chan, tf, num_eng, num_aux, num_chan, num_tf);
+      xsp_status = xsp3m_histogram_read_frames(xsp_handle_, buffer, 0, start_chan, tf, num_eng, num_chan, num_tf);
       if (xsp_status < XSP3_OK){
         checkErrorCode("xsp3_histogram_read_frames", xsp_status);
         status = XSP_STATUS_ERROR;
       }
     }
     else {
-      circ_buffer = (bool)(Xsp3Sys[xsp_handle_].run_flags & XSP3_RUN_FLAGS_CIRCULAR_BUFFER);
+      uint32_t twrap;
+      uint32_t *frame_ptr;
+      int thisPath, chanIdx;
+
+      bool circ_buffer = (bool)(Xsp3Sys[xsp_handle_].run_flags & XSP3_RUN_FLAGS_CIRCULAR_BUFFER);
       if (tf > total_tf && !circ_buffer) {
         LOG4CXX_ERROR(logger_, "Requested timeframe " << tf << " lies beyond end of buffer (length " << total_tf <<")");
         checkErrorCode("xsp3_histogram_memcpy", XSP3_RANGE_CHECK);
