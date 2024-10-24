@@ -1013,9 +1013,7 @@ int LibXspressWrapper::histogram_memcpy(uint32_t *buffer,
     checkErrorCode("histogram_memcpy", XSP3_INVALID_PATH);
     status = XSP_STATUS_ERROR;
   } else {
-    // TODO: remove when testing finished
-    bool fallback = false;
-    if (Xsp3Sys[xsp_handle_].features.generation == XspressGen3Mini && fallback == true){
+    if (Xsp3Sys[xsp_handle_].features.generation == XspressGen3Mini){
       // TODO: remove this when finished debugging
       LOG4CXX_DEBUG_LEVEL(
         1,
