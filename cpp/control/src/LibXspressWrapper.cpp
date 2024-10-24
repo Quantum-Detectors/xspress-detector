@@ -1027,13 +1027,24 @@ int LibXspressWrapper::histogram_memcpy(uint32_t *buffer,
 
     if (Xsp3Sys[xsp_handle_].features.generation == XspressGen3Mini){
       // TODO: remove this when finished debugging
-      LOG4CXX_DEBUG_LEVEL(1, logger_, "calling xsp3_histogram_read4d with start channel " << start_chan << " and num_chan " << num_chan);
+      LOG4CXX_DEBUG_LEVEL(
+        1,
+        logger_,
+        "xsp3_histogram_read4d"
+        << " start_chan " << start_chan
+        << " num_chan " << num_chan
+        << " start tf" << tf
+        << " eng aux chan tf"
+        << num_eng << ", " << num_aux << ", " << num_chan << ", " << num_tf
+      );
+      // int xsp3_histogram_read4d(int path, u_int32_t *buffer, unsigned eng, unsigned aux, unsigned chan, unsigned tf, unsigned num_eng, unsigned num_aux, unsigned num_chan, unsigned num_tf)
       xsp_status = xsp3_histogram_read4d(xsp_handle_, buffer, 0, 0, start_chan, tf, num_eng, num_aux, num_chan, num_tf);
       if (xsp_status < XSP3_OK){
         checkErrorCode("xsp3_histogram_read_frames", xsp_status);
         status = XSP_STATUS_ERROR;
       }
-    } else {
+    }
+    else {
       if (tf > total_tf && !circ_buffer) {
         LOG4CXX_ERROR(logger_, "Requested timeframe " << tf << " lies beyond end of buffer (length " << total_tf <<")");
         checkErrorCode("xsp3_histogram_memcpy", XSP3_RANGE_CHECK);
