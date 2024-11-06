@@ -19,8 +19,8 @@ namespace FrameReceiver {
 namespace X3X2ListModeFrameDecoderDefaults {
   const int frame_number = -1;
   const int buffer_id = 0;
-  const size_t max_size = 1000; // maximum size of a frame for dropped buffer, incl. header size
-  const size_t header_size = 100;
+  const size_t max_size = 8192; // Each TCP frame is 8192 bytes of 4096 16 bit words
+  const size_t header_size = 30; // Header is first and should contain 15 words
   const int num_buffers = 5;
 } // namespace X3X2ListModeFrameDecoderDefaults
 
