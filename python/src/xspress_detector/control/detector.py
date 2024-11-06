@@ -827,14 +827,12 @@ class XspressDetector(object):
             configs = [
                 {
                     "rx_ports": ",".join([str(p) for p in ports]),
-                    "rx_type": "udp",
-                    "decoder_type": "XspressListMode",
+                    "rx_type": "tcp",
+                    "decoder_type": "X3X2ListMode",
                     "rx_address": ip,
                     "rx_recv_buffer_size": 30000000,
                 }
-                for ip, ports in ListModeIPPortGen(
-                    self.num_chan_per_process_list, self.num_process_list
-                )
+                for ip, ports in [("192.168.0.2", [30125]), ("192.168.0.3", [30125])]
             ]
         elif mode == XSPRESS_MODE_MCA:
             configs = [
