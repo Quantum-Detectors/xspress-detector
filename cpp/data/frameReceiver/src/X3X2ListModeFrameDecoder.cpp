@@ -148,21 +148,21 @@ void X3X2ListModeFrameDecoder::get_status(const std::string param_prefix,
 }
 
 int X3X2ListModeFrameDecoder::get_version_major() {
-  return ODIN_DATA_VERSION_MAJOR;
+  return XSPRESS_DETECTOR_VERSION_MAJOR;
 }
 
 int X3X2ListModeFrameDecoder::get_version_minor() {
-  return ODIN_DATA_VERSION_MINOR;
+  return XSPRESS_DETECTOR_VERSION_MINOR;
 }
 
 int X3X2ListModeFrameDecoder::get_version_patch() {
-  return ODIN_DATA_VERSION_PATCH;
+  return XSPRESS_DETECTOR_VERSION_PATCH;
 }
 
 std::string X3X2ListModeFrameDecoder::get_version_short() {
-  return ODIN_DATA_VERSION_STR_SHORT;
+  return XSPRESS_DETECTOR_VERSION_STR_SHORT;
 }
 
 std::string X3X2ListModeFrameDecoder::get_version_long() {
-  return ODIN_DATA_VERSION_STR;
+  return XSPRESS_DETECTOR_VERSION_STR;
 }
