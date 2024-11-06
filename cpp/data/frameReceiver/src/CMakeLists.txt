@@ -10,6 +10,10 @@ target_link_libraries(XspressFrameDecoder ${ODINDATA_LIBRARIES} ${Boost_LIBRARIE
 add_library(XspressListModeFrameDecoder SHARED XspressListModeFrameDecoder.cpp XspressListModeFrameDecoderLib.cpp)
 target_link_libraries(XspressListModeFrameDecoder ${ODINDATA_LIBRARIES} ${Boost_LIBRARIES} ${LOG4CXX_LIBRARIES} ${ZEROMQ_LIBRARIES})
 
+# Add library for xspress X3X2 list mode decoder
+add_library(X3X2ListModeFrameDecoder SHARED X3X2ListModeFrameDecoder.cpp X3X2ListModeFrameDecoderLib.cpp)
+target_link_libraries(X3X2ListModeFrameDecoder ${ODINDATA_LIBRARIES} ${Boost_LIBRARIES} ${LOG4CXX_LIBRARIES} ${ZEROMQ_LIBRARIES})
+
 
 install(TARGETS XspressFrameDecoder
         RUNTIME DESTINATION bin
@@ -21,3 +25,7 @@ install(TARGETS XspressListModeFrameDecoder
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib)
 
+install(TARGETS X3X2ListModeFrameDecoder
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)
