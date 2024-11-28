@@ -81,6 +81,9 @@ class FPXspressAdapter(FPCompressionAdapter):
     def put(self, path, request):  # pylint: disable=W0613
         if path.startswith("config/hdf/dataset/data"):
             self.configure_data_datasets(path,request)
+        if path.startswith("config/offset/offset_adjustment"):
+            value = json_decode(request.body)
+            self.configure_dataset_offset(value)
         if path == self._command:
             # Check the mode we are running in (mca or list)
             mode = self._xsp_adapter.detector.mode
@@ -170,6 +173,20 @@ class FPXspressAdapter(FPCompressionAdapter):
                         "chunks": int(self._batch_size),
                     },
                     "xspress-list": {"reset": True},
+                }
+                logging.warning("Sending: {}".format(parameters))
+                client.send_configuration(parameters)
+            except Exception as err:
+                logging.debug(OdinDataAdapter.ERROR_FAILED_TO_SEND)
+                logging.error("Error: %s", err)
+
+    def configure_dataset_offset(self, offset):
+        for client in self._clients:
+            try:
+                parameters = {
+                    "xspress": {
+                        "offset": int(offset),
+                    },
                 }
                 logging.warning("Sending: {}".format(parameters))
                 client.send_configuration(parameters)

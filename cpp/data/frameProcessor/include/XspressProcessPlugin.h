@@ -85,6 +85,7 @@ private:
         uint32_t current_block_start_;
         uint32_t concurrent_processes_;
         uint32_t concurrent_rank_;
+        uint32_t offset;
         std::string acq_id_;
         std::string live_view_name_;
 
@@ -115,6 +116,8 @@ private:
         static const std::string CONFIG_DTC_PARAMS;
         
         static const std::string CONFIG_CHUNK;
+
+        static const std::string CONFIG_OFFSET;
 
         /** Pointer to logger */
         LoggerPtr logger_;
