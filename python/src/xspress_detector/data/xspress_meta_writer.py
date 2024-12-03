@@ -24,6 +24,7 @@ XSPRESS_SCALARS = "xspress_scalars"
 XSPRESS_DTC = "xspress_dtc"
 XSPRESS_INP_EST = "xspress_inp_est"
 XSPRESS_CHUNK = "xspress_meta_chunk"
+XSPRESS_SUM = "xspress_sum"
 
 # Number of scalars per channel
 XSPRESS_SCALARS_PER_CHANNEL = 9
@@ -34,6 +35,7 @@ DATASET_DTC = "dtc"
 DATASET_INP_EST = "inp_est"
 DATASET_DAQ_VERSION = "data_version"
 DATASET_META_VERSION = "meta_version"
+DATASET_SUM = "sum"
 
 
 class XspressMetaWriter(MetaWriter):
@@ -60,6 +62,7 @@ class XspressMetaWriter(MetaWriter):
         }
         self._dtc = {}
         self._inp = {}
+        self._sum = {}
         super(XspressMetaWriter, self).__init__(name, directory, endpoints, config)
 
         self._series = None
@@ -106,6 +109,18 @@ class XspressMetaWriter(MetaWriter):
                 block_size=self._chunk_size,
             )
         )
+        self._logger.info("Adding dataset: {}".format(DATASET_SUM))
+        dsets.append(
+            Int32HDF5Dataset(
+                DATASET_SUM,
+                shape=(self._num_frames,),
+                maxshape=(None,),
+                chunks=(self._chunk_size,),
+                rank=1,
+                cache=True,
+                block_size=self._chunk_size,
+            )
+        )
         dsets.append(Int64HDF5Dataset(DATASET_DAQ_VERSION))
         dsets.append(Int64HDF5Dataset(DATASET_META_VERSION))
         return dsets
@@ -117,6 +132,7 @@ class XspressMetaWriter(MetaWriter):
             XSPRESS_DTC: self.handle_xspress_dtc,
             XSPRESS_INP_EST: self.handle_xspress_inp_est,
             XSPRESS_CHUNK: self.handle_xspress_meta_chunk,
+            XSPRESS_SUM: self.handle_xspress_sum,
         }
 
     def handle_xspress_scalars(self, header, _data):
@@ -244,6 +260,7 @@ class XspressMetaWriter(MetaWriter):
         if self._inp[frame]['qty'] == self._num_channels:
             self._add_value(DATASET_INP_EST, self._inp[frame]['values'], offset=frame)
             del self._inp[frame]
+
     def handle_xspress_meta_chunk(self, header, _data):
         self._chunk_size = int(_data)
         if header["frame_id"] == -1 and self._configured == 0:
@@ -254,6 +271,40 @@ class XspressMetaWriter(MetaWriter):
             meta_dsets = self._define_detector_datasets()
             for dset in meta_dsets:
                 self._datasets[dset.name] = dset
+
+    def handle_xspress_sum(self, header, _data):
+        self._logger.debug("%s | Handling xspress sum message", self._name)
+        # Extract the channel number from the header
+        channel = header['channel_index']
+        # Extract Number of channels 
+        number_of_channels = header['number_of_channels']
+        # Number of frames
+        number_of_frames = header['number_of_frames']
+        # Frame ID
+        frame_id = header['frame_id']
+
+
+        format_str = '{}d'.format(number_of_frames)
+        array = struct.unpack(format_str, _data)
+        pairs = self._num_channels / number_of_channels
+        for frame in range(number_of_frames):
+            current_frame_id = frame_id + frame
+            self.add_sum_value(current_frame_id, pairs, array[frame])
+
+    def add_sum_value(self, frame, pairs, value):
+        # Check if we need to create an entry for this frame
+        if frame not in self._sum:
+            self._sum[frame] = {
+                'qty': 0,
+                'values': 0
+            }
+
+        self._sum[frame]['values'] += value
+        self._sum[frame]['qty'] += 1
+
+        if self._sum[frame]['qty'] == int(pairs):
+            self._add_value(DATASET_SUM, self._sum[frame]['values'], offset=frame)
+            del self._sum[frame]
 
     @staticmethod
     def get_version():

@@ -95,6 +95,9 @@ private:
         void *scalar_memblock_;
         void *dtc_memblock_;
         void *inp_est_memblock_;
+        void *sum_memblock_;
+        /** Memory block for sum value */
+        void calculate_sum(boost::shared_ptr<Frame> frame);
         /** Number of scalars recorded */
         uint32_t num_scalars_recorded_;
 
