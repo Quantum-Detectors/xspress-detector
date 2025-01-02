@@ -180,7 +180,8 @@ int LibXspressWrapper::configure_list(int num_cards,                 // Number o
   int status = XSP_STATUS_OK;
   LOG4CXX_DEBUG_LEVEL(1, logger_, "Xspress wrapper calling xsp3_config_init");
 
-  // Setup initialisation flags to allow alternate UDP RX sockets using the default ports
+  // Setup initialisation flags to prevent Xspress library from connecting it's own
+  // sockets to the Xspress cards to allow us to read from the sockets instead
   int do_init = Xsp3Init_Normal | Xsp3InitUDP_DisHistThreads;
 
   // Call the more detailed config init function
