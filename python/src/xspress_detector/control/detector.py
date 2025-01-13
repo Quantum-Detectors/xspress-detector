@@ -824,6 +824,11 @@ class XspressDetector(object):
 
     async def configure_frs(self, mode: int):
         if mode == XSPRESS_MODE_LIST:
+            # One ADC card per process pair (one TCP connection each)
+            # TODO: replace 30127 (the scalars socket) for 30125
+            # (the actual event socket when ready)
+            ip_and_ports = [(f"192.168.0.{card_num+1}", [30127]) for card_num in range(1, self.num_cards+1)]
+            self.logger.info(f"Connecting to list mode sockets {ip_and_ports}")
             configs = [
                 {
                     "rx_ports": ",".join([str(p) for p in ports]),
@@ -832,7 +837,7 @@ class XspressDetector(object):
                     "rx_address": ip,
                     "rx_recv_buffer_size": 30000000,
                 }
-                for ip, ports in [("192.168.0.2", [30125]), ("192.168.0.3", [30125])]
+                for ip, ports in ip_and_ports
             ]
         elif mode == XSPRESS_MODE_MCA:
             configs = [
