@@ -1230,4 +1230,60 @@ int LibXspressWrapper::setup_clocks(int num_cards)
   return status;
 }
 
+/**
+ * @brief Enable reset events for list mode output for the X3X2.
+ *
+ * This means that reset events should be sent over the TCP socket (30125)
+ * when a reset occurs.
+ *
+ * @return int Status
+ */
+int LibXspressWrapper::enable_list_mode_resets()
+{
+  int status = XSP_STATUS_OK;
+
+  // Only for X3X2
+  if (xsp3_is_xsp3m_plus(0) == 1)
+  {
+    LOG4CXX_DEBUG_LEVEL(1, logger_, "Xspress wrapper enabling list mode resets for X3X2");
+
+    // Need to enable each channel individually to preserve the current control register value
+    int num_chan = xsp3_get_num_chan(xsp_handle_);
+    if (num_chan < 0)
+    {
+      checkErrorCode("Error enabling X3X2 list mode resets", num_chan);
+      status = XSP_STATUS_ERROR;
+    }
+
+    else
+    {
+
+      int current_register_value = 0;
+      for (int chan = 0; chan < num_chan; chan++)
+      {
+        int xsp_status = xsp3_get_chan_cont(xsp_handle_, chan, &current_register_value);
+        if (xsp_status < 0)
+        {
+          checkErrorCode("xsp3_get_chan_cont", xsp_status);
+          status = XSP_STATUS_ERROR;
+        }
+        else
+        {
+          LOG4CXX_INFO(logger_, "Channel " << chan << " current control register value: " << current_register_value);
+          // Add the reset list to the register
+          xsp_status = xsp3_set_chan_cont(xsp_handle_, chan, current_register_value | XSP3M_CC2_SEND_RESET_WIDTHS);
+          if (xsp_status < 0)
+          {
+            checkErrorCode("xsp3_set_chan_cont", xsp_status);
+            status = XSP_STATUS_ERROR;
+          }
+        }
+      }
+    }
+
+  }
+
+  return status;
+}
+
 } /* namespace Xspress */

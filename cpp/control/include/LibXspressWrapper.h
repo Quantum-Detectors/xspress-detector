@@ -191,6 +191,7 @@ public:
   int set_sca_thresh(int chan, int value);
   int set_trigger_input(bool list_mode);
   int setup_clocks(int num_cards);
+  int enable_list_mode_resets();
 
   static const int runFlag_MCA_SPECTRA_;
   static const int runFlag_SCALERS_ONLY_;

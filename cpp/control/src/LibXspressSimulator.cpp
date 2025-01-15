@@ -963,4 +963,10 @@ int LibXspressSimulator::setup_clocks(int num_cards)
   return XSP_STATUS_OK;
 }
 
+int LibXspressSimulator::enable_list_mode_resets()
+{
+  // This is a no op for the simulator
+  return XSP_STATUS_OK;
+}
+
 } /* namespace Xspress */
