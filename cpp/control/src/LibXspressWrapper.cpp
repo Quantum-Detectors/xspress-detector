@@ -1258,7 +1258,7 @@ int LibXspressWrapper::enable_list_mode_resets()
     else
     {
 
-      int current_register_value = 0;
+      u_int32_t current_register_value = 0;
       for (int chan = 0; chan < num_chan; chan++)
       {
         int xsp_status = xsp3_get_chan_cont(xsp_handle_, chan, &current_register_value);
