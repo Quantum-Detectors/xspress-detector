@@ -1248,15 +1248,16 @@ int LibXspressWrapper::enable_list_mode_resets()
     LOG4CXX_DEBUG_LEVEL(1, logger_, "Xspress wrapper enabling list mode resets for X3X2");
 
     // The second general control register is used - apply to all channels
+    /*
     int xsp_status = xsp3_set_chan_cont2(xsp_handle_, -1, XSP3M_CC2_SEND_RESET_WIDTHS);
     if (xsp_status < 0)
     {
       checkErrorCode("xsp3_set_chan_cont2", xsp_status);
       status = XSP_STATUS_ERROR;
     }
+    */
 
     // Need to enable each channel individually to preserve the current control register value
-    /*
     int num_chan = xsp3_get_num_chan(xsp_handle_);
     if (num_chan < 0)
     {
@@ -1270,7 +1271,8 @@ int LibXspressWrapper::enable_list_mode_resets()
       u_int32_t current_register_value = 0;
       for (int chan = 0; chan < num_chan; chan++)
       {
-        int xsp_status = xsp3_get_chan_cont(xsp_handle_, chan, &current_register_value);
+        //int xsp_status = xsp3_get_chan_cont(xsp_handle_, chan, &current_register_value);
+        int xsp_status = xsp3_read_reg(path, chan, XSP3_REGION_REGS, XSP3_CHAN_CONT2, 1, &current_register_value);
         if (xsp_status < 0)
         {
           checkErrorCode("xsp3_get_chan_cont", xsp_status);
@@ -1286,10 +1288,14 @@ int LibXspressWrapper::enable_list_mode_resets()
             checkErrorCode("xsp3_set_chan_cont", xsp_status);
             status = XSP_STATUS_ERROR;
           }
+
+          // Try getting value again
+          xsp_status = xsp3_read_reg(path, chan, XSP3_REGION_REGS, XSP3_CHAN_CONT2, 1, &current_register_value);
+          LOG4CXX_INFO(logger_, "Channel " << chan << " new control register value: " << current_register_value);
+
         }
       }
     }
-    */
   }
 
   return status;
