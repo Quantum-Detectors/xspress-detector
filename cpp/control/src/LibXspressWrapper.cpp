@@ -1284,7 +1284,7 @@ int LibXspressWrapper::enable_list_mode_resets()
         {
           LOG4CXX_INFO(logger_, "Channel " << chan << " current cont: " << current_cont_value << ", cont2: " << current_cont2_value);
           // Enable reset ticks
-          xsp_status = xsp3_set_chan_cont(xsp_handle_, chan, current_cont_value | XSP3_CC_LIVE_TICKS_MODE(XSP3_CC_LT_RESET_TICKS));
+          xsp_status = xsp3_set_chan_cont(xsp_handle_, chan, current_cont_value | XSP3_CC_SEND_RESET_WIDTHS);
           // Add the reset list to the register (lives on CC2)
           xsp_status |= xsp3_set_chan_cont2(xsp_handle_, chan, current_cont2_value | XSP3M_CC2_SEND_RESET_WIDTHS);
           if (xsp_status < 0)
