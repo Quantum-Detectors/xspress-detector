@@ -1272,7 +1272,7 @@ int LibXspressWrapper::enable_list_mode_resets()
       for (int chan = 0; chan < num_chan; chan++)
       {
         //int xsp_status = xsp3_get_chan_cont(xsp_handle_, chan, &current_register_value);
-        int xsp_status = xsp3_read_reg(path, chan, XSP3_REGION_REGS, XSP3_CHAN_CONT2, 1, &current_register_value);
+        int xsp_status = xsp3_read_reg(xsp_handle_, chan, XSP3_REGION_REGS, XSP3_CHAN_CONT2, 1, &current_register_value);
         if (xsp_status < 0)
         {
           checkErrorCode("xsp3_get_chan_cont", xsp_status);
@@ -1290,7 +1290,7 @@ int LibXspressWrapper::enable_list_mode_resets()
           }
 
           // Try getting value again
-          xsp_status = xsp3_read_reg(path, chan, XSP3_REGION_REGS, XSP3_CHAN_CONT2, 1, &current_register_value);
+          xsp_status = xsp3_read_reg(xsp_handle_, chan, XSP3_REGION_REGS, XSP3_CHAN_CONT2, 1, &current_register_value);
           LOG4CXX_INFO(logger_, "Channel " << chan << " new control register value: " << current_register_value);
 
         }
