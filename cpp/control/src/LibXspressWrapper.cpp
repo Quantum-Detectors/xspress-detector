@@ -1268,11 +1268,13 @@ int LibXspressWrapper::enable_list_mode_resets()
     else
     {
 
-      u_int32_t current_register_value = 0;
+      u_int32_t current_cont_value = 0;
+      u_int32_t current_cont2_value = 0;
       for (int chan = 0; chan < num_chan; chan++)
       {
-        //int xsp_status = xsp3_get_chan_cont(xsp_handle_, chan, &current_register_value);
-        int xsp_status = xsp3_read_reg(xsp_handle_, chan, XSP3_REGION_REGS, XSP3_CHAN_CONT2, 1, &current_register_value);
+        // Get current values
+        int xsp_status = xsp3_get_chan_cont(xsp_handle_, chan, &current_cont_value);
+        xsp_status |= xsp3_read_reg(xsp_handle_, chan, XSP3_REGION_REGS, XSP3_CHAN_CONT2, 1, &current_cont2_value);
         if (xsp_status < 0)
         {
           checkErrorCode("xsp3_get_chan_cont", xsp_status);
@@ -1280,19 +1282,21 @@ int LibXspressWrapper::enable_list_mode_resets()
         }
         else
         {
-          LOG4CXX_INFO(logger_, "Channel " << chan << " current control register value: " << current_register_value);
+          LOG4CXX_INFO(logger_, "Channel " << chan << " current cont: " << current_cont_value << ", cont2: " << current_cont2_value);
+          // Enable reset ticks
+          xsp_status = xsp3_set_chan_cont(xsp_handle_, chan, current_cont_value | XSP3_CC_LIVE_TICKS_MODE(XSP3_CC_LT_RESET_TICKS));
           // Add the reset list to the register (lives on CC2)
-          xsp_status = xsp3_set_chan_cont2(xsp_handle_, chan, current_register_value | XSP3M_CC2_SEND_RESET_WIDTHS);
+          xsp_status |= xsp3_set_chan_cont2(xsp_handle_, chan, current_cont2_value | XSP3M_CC2_SEND_RESET_WIDTHS);
           if (xsp_status < 0)
           {
             checkErrorCode("xsp3_set_chan_cont", xsp_status);
             status = XSP_STATUS_ERROR;
           }
 
-          // Try getting value again
-          xsp_status = xsp3_read_reg(xsp_handle_, chan, XSP3_REGION_REGS, XSP3_CHAN_CONT2, 1, &current_register_value);
-          LOG4CXX_INFO(logger_, "Channel " << chan << " new control register value: " << current_register_value);
-
+          // Try getting values again
+          xsp_status = xsp3_get_chan_cont(xsp_handle_, chan, &current_cont_value);
+          xsp_status |= xsp3_read_reg(xsp_handle_, chan, XSP3_REGION_REGS, XSP3_CHAN_CONT2, 1, &current_cont2_value);
+          LOG4CXX_INFO(logger_, "Channel " << chan << " new cont: " << current_cont_value << ", cont2: " << current_cont2_value);
         }
       }
     }
