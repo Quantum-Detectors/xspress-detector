@@ -1248,7 +1248,7 @@ int LibXspressWrapper::enable_list_mode_resets()
     LOG4CXX_DEBUG_LEVEL(1, logger_, "Xspress wrapper enabling list mode resets for X3X2");
 
     // The second general control register is used - apply to all channels
-    xsp_status = xsp3_set_chan_cont2(xsp_handle_, -1, XSP3M_CC2_SEND_RESET_WIDTHS);
+    int xsp_status = xsp3_set_chan_cont2(xsp_handle_, -1, XSP3M_CC2_SEND_RESET_WIDTHS);
     if (xsp_status < 0)
     {
       checkErrorCode("xsp3_set_chan_cont2", xsp_status);
