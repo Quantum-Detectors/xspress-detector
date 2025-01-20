@@ -240,7 +240,7 @@ int XspressDetector::setupControlRegister()
   if (checkConnected()){
     if (xsp_mode_ == XSP_MODE_LIST)
     {
-      status = detector_->enable_list_mode_resets(xsp_num_cards_);
+      status = detector_->enable_list_mode_resets();
       if (status != XSP_STATUS_OK)
       {
         setErrorString("Failed to configure list mode resets");
