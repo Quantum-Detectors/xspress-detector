@@ -162,10 +162,6 @@ int XspressDetector::connect_list_mode()
     xsp_max_channels_,                         // Set the maximum number of channels
     xsp_debug_                                 // Enable debug messages
   );
-
-  // Make sure reset events are enabled for X3X2
-  status |= detector_->enable_list_mode_resets();
-
   if (status == XSP_STATUS_OK){
     // We have a valid handle to set the connected status
     LOG4CXX_INFO(logger_, "Connected to Xspress");
@@ -226,6 +222,33 @@ int XspressDetector::setupClocks()
     }
   } else {
     LOG4CXX_INFO(logger_, "Cannot set up clocks as not connected");
+    status = XSP_STATUS_ERROR;
+  }
+  return status;
+}
+
+/**
+ * @brief Set up the control register values
+ *
+ * - Enables resets if using X3X2 list mode
+ *
+ * @return int Whether we are successful
+ */
+int XspressDetector::setupControlRegister()
+{
+  int status = XSP_STATUS_OK;
+  if (checkConnected()){
+    if (xsp_mode_ == XSP_MODE_LIST)
+    {
+      status = detector_->enable_list_mode_resets(xsp_num_cards_);
+      if (status != XSP_STATUS_OK)
+      {
+        setErrorString("Failed to configure list mode resets");
+      }
+    }
+  } else {
+    LOG4CXX_INFO(logger_, "Cannot set up control register as not connected");
+    status = XSP_STATUS_ERROR;
   }
   return status;
 }

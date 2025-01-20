@@ -62,6 +62,7 @@ public:
   int disconnect();
   int setupChannels();
   int setupClocks();
+  int setupControlRegister();
   int enableDAQ();
   int checkSaveDir(const std::string& dir_name);
   int saveSettings();
