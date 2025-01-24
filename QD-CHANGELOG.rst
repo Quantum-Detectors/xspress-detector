@@ -3,8 +3,8 @@ Change log
 
 Changes made by Quantum Detectors to this repository are recorded below.
 
-0.5.0qd0-1
-----------
+0.5.0+qd0.1
+-----------
 
 Added:
 
