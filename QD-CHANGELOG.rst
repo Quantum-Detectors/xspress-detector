@@ -20,7 +20,7 @@ Changed:
   - requests X3X2 list mode decoder plugin on configure to list mode
   - changed number of channels used in list mode
   - changed frame receiver IP/port configuration (currently listens to
-    scalars socket to leave event TCP/IP socket free for Python)
+  scalars socket to leave event TCP/IP socket free for Python)
 
 Fixed:
 
