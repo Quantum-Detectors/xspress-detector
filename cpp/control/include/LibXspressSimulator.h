@@ -154,6 +154,8 @@ public:
   int set_window(int chan, int sca, int llm, int hlm);
   int set_sca_thresh(int chan, int value);
   int set_trigger_input(bool list_mode);
+  int setup_clocks(int num_cards);
+  int enable_list_mode_resets();
 
 private:
   /** String representation of trigger modes */

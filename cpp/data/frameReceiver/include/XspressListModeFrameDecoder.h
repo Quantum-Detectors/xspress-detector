@@ -1,3 +1,10 @@
+/**
+ * @file XspressListModeFrameDecoder.h
+ * @author Alan Greer
+ * @brief This decoder is used to handle list mode events for Xspress 4
+ * @date 2025-01-02
+ */
+
 #ifndef SRC_XSPRESSLISTMODEDECODER_H
 #define SRC_XSPRESSLISTMODEDECODER_H
 

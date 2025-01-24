@@ -154,7 +154,7 @@ int LibXspressWrapper::configure_mca(int num_cards,                 // Number of
     port,                                   // Base port number override (-1 does not override)
     NULL,                                   // Base MAC override (NULL does not override)
     max_channels,                           // Set the maximum number of channels
-    1,                                      // Don't create scope data module
+    1,                                      // Create scope data module
     NULL,                                   // Override scope data module filename
     debug,                                  // Enable debug messages
     verbose                                 // Enable verbose debug messages
@@ -165,6 +165,7 @@ int LibXspressWrapper::configure_mca(int num_cards,                 // Number of
     status = XSP_STATUS_ERROR;
     checkErrorCode("xsp3_config", xsp_handle_);
   }
+
   return status;
 }
 
@@ -179,7 +180,8 @@ int LibXspressWrapper::configure_list(int num_cards,                 // Number o
   int status = XSP_STATUS_OK;
   LOG4CXX_DEBUG_LEVEL(1, logger_, "Xspress wrapper calling xsp3_config_init");
 
-  // Setup initialisation flags to allow alternate UDP RX sockets using the default ports
+  // Setup initialisation flags to prevent Xspress library from connecting it's own
+  // sockets to the Xspress cards to allow us to read from the sockets instead
   int do_init = Xsp3Init_Normal | Xsp3InitUDP_DisHistThreads;
 
   // Call the more detailed config init function
@@ -190,12 +192,12 @@ int LibXspressWrapper::configure_list(int num_cards,                 // Number o
     port,                                   // Base port number override (-1 does not override)
     NULL,                                   // Base MAC override (NULL does not override)
     max_channels,                           // Set the maximum number of channels
-    1,                                      // Don't create scope data module
+    1,                                      // Create scope data module
     NULL,                                   // Override scope data module filename
     debug,                                  // Enable debug messages
     0,                                      // Card index
     (Xsp3Init)do_init,                      // Initialisation flags
-    Xsp3mRd_Auto,                           // Xsp3mRd_Auto
+    Xsp3mRd_SendHistList,                   // Configure readout for list mode
     XspressReal                             // XspressReal
   );
 
@@ -859,13 +861,16 @@ int LibXspressWrapper::get_num_frames_read(int32_t *frames)
   if (*frames < XSP3_OK) {
     checkErrorCode("xsp3_scaler_check_progress_details", *frames);
     status = XSP_STATUS_ERROR;
-  } else {
-    if (flags != 0){
-      std::stringstream ss;
-      ss << "xsp3_scaler_check_progress_details reported error flags [" << flags << "]";
-      setErrorString(ss.str());
-      status = XSP_STATUS_ERROR;
-    }
+  }
+  else if (flags != 0){
+    // TODO: check what to do about this permanently - ignore playback under-run which happens on Mk2 a lot?
+    // If so, should identify whether mark 2 and then check ignore
+    if (flags == Xsp3ErrFlag::Xsp3ErrFlag_Playback) return status;
+
+    std::stringstream ss;
+    ss << "xsp3_scaler_check_progress_details reported error flags [" << flags << "]";
+    setErrorString(ss.str());
+    status = XSP_STATUS_ERROR;
   }
   return status;
 }
@@ -1004,46 +1009,44 @@ int LibXspressWrapper::histogram_memcpy(uint32_t *buffer,
 {
   int status = XSP_STATUS_OK;
   int xsp_status;
-  uint32_t twrap;
-  uint32_t *frame_ptr;
-  int rc;
-  int thisPath, chanIdx;
-  bool circ_buffer;
 
-  if (xsp_handle_ < 0 || xsp_handle_ >= XSP3_MAX_PATH || !Xsp3Sys[xsp_handle_].valid){
+  if (xsp_handle_ < 0 || xsp_handle_ >= XSP3_MAX_PATH || !Xsp3Sys[xsp_handle_].valid) {
     checkErrorCode("histogram_memcpy", XSP3_INVALID_PATH);
     status = XSP_STATUS_ERROR;
-  } else {
-    circ_buffer = (bool)(Xsp3Sys[xsp_handle_].run_flags & XSP3_RUN_FLAGS_CIRCULAR_BUFFER);
+  }
+  else if (Xsp3Sys[xsp_handle_].features.generation == XspressGen3Mini) {
+    xsp_status = xsp3_histogram_read4d(xsp_handle_, buffer, 0, 0, start_chan, tf, num_eng, num_aux, num_chan, num_tf);
+    if (xsp_status < XSP3_OK){
+      checkErrorCode("xsp3_histogram_read_frames", xsp_status);
+      status = XSP_STATUS_ERROR;
+    }
+  }
+  else {
+    uint32_t twrap;
+    uint32_t *frame_ptr;
+    int thisPath, chanIdx;
 
-    if (Xsp3Sys[xsp_handle_].features.generation == XspressGen3Mini){
-      xsp_status = xsp3m_histogram_read_frames(xsp_handle_, buffer, 0, start_chan, tf, num_eng, num_chan, num_tf);
-      if (xsp_status < XSP3_OK){
-        checkErrorCode("xsp3_histogram_read_frames", xsp_status);
-        status = XSP_STATUS_ERROR;
+    bool circ_buffer = (bool)(Xsp3Sys[xsp_handle_].run_flags & XSP3_RUN_FLAGS_CIRCULAR_BUFFER);
+    if (tf > total_tf && !circ_buffer) {
+      LOG4CXX_ERROR(logger_, "Requested timeframe " << tf << " lies beyond end of buffer (length " << total_tf <<")");
+      checkErrorCode("xsp3_histogram_memcpy", XSP3_RANGE_CHECK);
+      status = XSP_STATUS_ERROR;
+    }
+    for (uint32_t t = tf; t < tf + num_tf; t++) {
+      if (circ_buffer){
+        twrap = t % total_tf;
+      } else {
+        twrap = t;
       }
-    } else {
-      if (tf > total_tf && !circ_buffer) {
-        LOG4CXX_ERROR(logger_, "Requested timeframe " << tf << " lies beyond end of buffer (length " << total_tf <<")");
-        checkErrorCode("xsp3_histogram_memcpy", XSP3_RANGE_CHECK);
-        status = XSP_STATUS_ERROR;
-      }
-      for (uint32_t t = tf; t < tf + num_tf; t++) {
-        if (circ_buffer){
-          twrap = t % total_tf;
+      for (uint32_t c = start_chan; c < start_chan + num_chan; c++) {
+        if ((xsp_status = xsp3_resolve_path(xsp_handle_, c, &thisPath, &chanIdx)) < 0){
+          checkErrorCode("xsp3_resolve_path", xsp_status);
+          status = XSP_STATUS_ERROR;
         } else {
-          twrap = t;
-        }
-        for (uint32_t c = start_chan; c < start_chan + num_chan; c++) {
-          if ((xsp_status = xsp3_resolve_path(xsp_handle_, c, &thisPath, &chanIdx)) < 0){
-            checkErrorCode("xsp3_resolve_path", xsp_status);
-            status = XSP_STATUS_ERROR;
-          } else {
-            frame_ptr = Xsp3Sys[thisPath].histogram[chanIdx].buffer;
-            frame_ptr += num_eng * num_aux * twrap;
-            memcpy(buffer, frame_ptr, num_eng * num_aux * sizeof(uint32_t));
-            buffer += num_eng * num_aux;
-          }
+          frame_ptr = Xsp3Sys[thisPath].histogram[chanIdx].buffer;
+          frame_ptr += num_eng * num_aux * twrap;
+          memcpy(buffer, frame_ptr, num_eng * num_aux * sizeof(uint32_t));
+          buffer += num_eng * num_aux;
         }
       }
     }
@@ -1169,6 +1172,7 @@ int LibXspressWrapper::set_trigger_input(bool list_mode)
   memset(&trig_mux, 0, sizeof(Xsp3TriggerMux));
 
   if (list_mode){
+    // TODO: Ben: check if these are correct
     trig_mux.trig_sel[0] = 0;
     trig_mux.trig_sel[1] = 2;
     trig_mux.trig_sel[2] = 1;
@@ -1176,6 +1180,125 @@ int LibXspressWrapper::set_trigger_input(bool list_mode)
   } else {
     for (int i = 0; i < 4; i++){
       trig_mux.trig_sel[i] = i;
+    }
+  }
+
+  return status;
+}
+
+/**
+ * 
+ * @brief This is used to check the clock signals are configured correctly.
+ * 
+ * This is important for X3X2 (Xspress 3X Mark 2) systems as the midplane
+ * is used as the clock source.
+ * 
+ * @param[in] num_cards Number of cards
+ * @return int Status whether we configured successfully or not
+ */
+int LibXspressWrapper::setup_clocks(int num_cards)
+{
+  int status = XSP_STATUS_OK;
+  int xsp_status;
+
+  // Need to set up clocks specifically for X3X2 models for triggering to work
+  if (xsp3_is_xsp3m_plus(0) == 1)
+  {
+    LOG4CXX_DEBUG_LEVEL(1, logger_, "Xspress wrapper configuring X3X2 midplane clock");
+    xsp_status = xsp3_clocks_setup(
+      xsp_handle_,
+      -1,
+      XSP4_CLK_SRC_MIDPLN_LMK61E2,
+      XSP3_CLK_FLAGS_NO_DITHER,
+      0
+    );
+    // < 0 for error, 0 for Xspress 3 success and clock frequency for other models
+    if (xsp_status < 0)
+    {
+      checkErrorCode("Error configuring X3X2 clocks", xsp_status);
+      status = XSP_STATUS_ERROR;
+    }
+
+    LOG4CXX_DEBUG_LEVEL(1, logger_, "Xspress wrapper configuring X3X2 sync mode");
+    xsp_status = xsp3_set_sync_mode(xsp_handle_, XSP3_SYNC_MODE(XSP3_SYNC_MIDPLANE), 0, 0);
+    if (xsp_status != XSP3_OK)
+    {
+      checkErrorCode("Error configuring X3X2 sync mode", xsp_status);
+      status = XSP_STATUS_ERROR;
+    }
+  }
+  return status;
+}
+
+/**
+ * @brief Enable reset events for list mode output for the X3X2.
+ *
+ * This means that reset events should be sent over the TCP socket (30125)
+ * when a reset occurs.
+ *
+ * @return int Status
+ */
+int LibXspressWrapper::enable_list_mode_resets()
+{
+  int status = XSP_STATUS_OK;
+
+  // Only for X3X2
+  if (xsp3_is_xsp3m_plus(0) == 1)
+  {
+    LOG4CXX_DEBUG_LEVEL(1, logger_, "Xspress wrapper enabling list mode resets for X3X2");
+
+    // The second general control register is used - apply to all channels
+    /*
+    int xsp_status = xsp3_set_chan_cont2(xsp_handle_, -1, XSP3M_CC2_SEND_RESET_WIDTHS);
+    if (xsp_status < 0)
+    {
+      checkErrorCode("xsp3_set_chan_cont2", xsp_status);
+      status = XSP_STATUS_ERROR;
+    }
+    */
+
+    // Need to enable each channel individually to preserve the current control register value
+    int num_chan = xsp3_get_num_chan(xsp_handle_);
+    if (num_chan < 0)
+    {
+      checkErrorCode("Error enabling X3X2 list mode resets", num_chan);
+      status = XSP_STATUS_ERROR;
+    }
+
+    else
+    {
+
+      u_int32_t current_cont_value = 0;
+      u_int32_t current_cont2_value = 0;
+      for (int chan = 0; chan < num_chan; chan++)
+      {
+        // Get current values
+        int xsp_status = xsp3_get_chan_cont(xsp_handle_, chan, &current_cont_value);
+        xsp_status |= xsp3_read_reg(xsp_handle_, chan, XSP3_REGION_REGS, XSP3_CHAN_CONT2, 1, &current_cont2_value);
+        if (xsp_status < 0)
+        {
+          checkErrorCode("xsp3_get_chan_cont", xsp_status);
+          status = XSP_STATUS_ERROR;
+        }
+        else
+        {
+          LOG4CXX_INFO(logger_, "Channel " << chan << " current cont: " << current_cont_value << ", cont2: " << current_cont2_value);
+          // Enable reset ticks
+          xsp_status = xsp3_set_chan_cont(xsp_handle_, chan, current_cont_value | XSP3_CC_SEND_RESET_WIDTHS);
+          // Add the reset list to the register (lives on CC2)
+          xsp_status |= xsp3_set_chan_cont2(xsp_handle_, chan, current_cont2_value | XSP3M_CC2_SEND_RESET_WIDTHS);
+          if (xsp_status < 0)
+          {
+            checkErrorCode("xsp3_set_chan_cont", xsp_status);
+            status = XSP_STATUS_ERROR;
+          }
+
+          // Try getting values again
+          xsp_status = xsp3_get_chan_cont(xsp_handle_, chan, &current_cont_value);
+          xsp_status |= xsp3_read_reg(xsp_handle_, chan, XSP3_REGION_REGS, XSP3_CHAN_CONT2, 1, &current_cont2_value);
+          LOG4CXX_INFO(logger_, "Channel " << chan << " new cont: " << current_cont_value << ", cont2: " << current_cont2_value);
+        }
+      }
     }
   }
 

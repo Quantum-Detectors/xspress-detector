@@ -824,17 +824,20 @@ class XspressDetector(object):
 
     async def configure_frs(self, mode: int):
         if mode == XSPRESS_MODE_LIST:
+            # One ADC card per process pair (one TCP connection each)
+            # TODO: replace 30127 (the scalars socket) for 30125
+            # (the actual event socket when ready)
+            ip_and_ports = [(f"192.168.0.{card_num+1}", [30127]) for card_num in range(1, self.num_cards+1)]
+            self.logger.info(f"Connecting to list mode sockets {ip_and_ports}")
             configs = [
                 {
                     "rx_ports": ",".join([str(p) for p in ports]),
-                    "rx_type": "udp",
-                    "decoder_type": "XspressListMode",
+                    "rx_type": "tcp",
+                    "decoder_type": "X3X2ListMode",
                     "rx_address": ip,
                     "rx_recv_buffer_size": 30000000,
                 }
-                for ip, ports in ListModeIPPortGen(
-                    self.num_chan_per_process_list, self.num_process_list
-                )
+                for ip, ports in ip_and_ports
             ]
         elif mode == XSPRESS_MODE_MCA:
             configs = [
@@ -870,14 +873,16 @@ class XspressDetector(object):
 
         # This seems to help when dealing with detectors that don't have 8 channels.
         # Apparently when the detector has a number of channels different from that defined in 'DEFAULT_MAX_CHANNELS',
-        # at XspressDetector.h, we have some problems when trying to connect to it straigh away using the reconfigure button.
+        # at XspressDetector.h, we have some problems when trying to connect to it straight away using the reconfigure button.
         await self.reset()
         await asyncio.sleep(FR_INIT_TIME[mode])
 
         resp = await self._async_client.send_recv(self.configuration.get())
         # resp = await self._put(MessageType.CONFIG, XspressDetectorStr.CONFIG_CONFIG_PATH, self.settings_paths[mode])
         resp = await self._put(MessageType.CMD, XspressDetectorStr.CMD_DISCONNECT, 1)
-        chans = self.mca_channels if mode == XSPRESS_MODE_MCA else self.mca_channels + 1
+        # TODO: Ben - check this is correct for X3X2 units (i.e. ignore marker channels)
+        # If so then we are going to need to work out whether the Xspress system is a Mk2 or not (or non-X?)
+        chans = self.mca_channels #  if mode == XSPRESS_MODE_MCA else self.mca_channels + 1
         await self._put(
             MessageType.CONFIG, XspressDetectorStr.CONFIG_MAX_CHANNELS, chans
         )
@@ -949,6 +954,7 @@ class XspressDetector(object):
         self.logger.critical(debug_method())
         self.max_channels = max_channels
         self.mca_channels = max_channels
+        self.num_cards = num_cards
         self.max_spectra = max_spectra
         self.run_flags = run_flags
         self.fr_clients = [
