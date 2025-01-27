@@ -823,11 +823,35 @@ class XspressDetector(object):
         result = await asyncio.gather(*tasks)
 
     async def configure_frs(self, mode: int):
+        """Configure the frame receivers for the acquisition mode selected
+
+        MCA mode:
+
+        - the control server uses the Xspress library API to read the data
+          using multiple worker threads
+        - Each worker copies data using the Xspress library from the shared
+          memory into Odin buffers - both MCA data and scalars
+
+        List mode:
+
+        - for Xspress 4 the frame receivers connect to each of the UDP ports
+          (1 per channel) to get the list mode data
+        - for Xspress 3 Mini Mk 2 the frame receivers connect to each TCP port
+          (1 per ADC consisting of 2 channels and 2 markers) to get list mode
+          data
+
+        Args:
+            mode (int): Acquisition mode
+
+        Raises:
+            ValueError: raised if an invalid acquisition mode is selected
+        """
         if mode == XSPRESS_MODE_LIST:
+            # TODO: don't break compatibility with Xspress 4
+            #  - IP addresses and ports
+            #  - decoder plugin to use
             # One ADC card per process pair (one TCP connection each)
-            # TODO: replace 30127 (the scalars socket) for 30125
-            # (the actual event socket when ready)
-            ip_and_ports = [(f"192.168.0.{card_num+1}", [30127]) for card_num in range(1, self.num_cards+1)]
+            ip_and_ports = [(f"192.168.0.{card_num+1}", [30125]) for card_num in range(1, self.num_cards+1)]
             self.logger.info(f"Connecting to list mode sockets {ip_and_ports}")
             configs = [
                 {
@@ -880,8 +904,7 @@ class XspressDetector(object):
         resp = await self._async_client.send_recv(self.configuration.get())
         # resp = await self._put(MessageType.CONFIG, XspressDetectorStr.CONFIG_CONFIG_PATH, self.settings_paths[mode])
         resp = await self._put(MessageType.CMD, XspressDetectorStr.CMD_DISCONNECT, 1)
-        # TODO: Ben - check this is correct for X3X2 units (i.e. ignore marker channels)
-        # If so then we are going to need to work out whether the Xspress system is a Mk2 or not (or non-X?)
+        # TODO: don't break compatibility with Xspress 4
         chans = self.mca_channels #  if mode == XSPRESS_MODE_MCA else self.mca_channels + 1
         await self._put(
             MessageType.CONFIG, XspressDetectorStr.CONFIG_MAX_CHANNELS, chans
