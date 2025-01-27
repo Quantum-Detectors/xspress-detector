@@ -124,6 +124,7 @@ X3X2ListModeFrameDecoder::process_message(size_t bytes_received) {
   LOG4CXX_INFO(logger_, "Processing " << bytes_received << " bytes");
   if (read_so_far_ + bytes_received == frame_size_) {
     read_so_far_ = 0;
+    LOG4CXX_INFO(logger_, "Completed TCP frame");
     return FrameDecoder::FrameReceiveStateComplete;
   } else if (read_so_far_ + bytes_received < frame_size_) {
     read_so_far_ += bytes_received;
