@@ -1,19 +1,16 @@
-//
-// Created by hir12111 on 03/11/18.
-//
 #include <iostream>
 #include "DataBlockFrame.h"
-#include "XspressListModeProcessPlugin.h"
+#include "X3X2ListModeProcessPlugin.h"
 #include "FrameProcessorDefinitions.h"
 #include "XspressDefinitions.h"
 #include "DebugLevelLogger.h"
 
 namespace FrameProcessor {
 
-const std::string XspressListModeProcessPlugin::CONFIG_CHANNELS =           "channels";
-const std::string XspressListModeProcessPlugin::CONFIG_RESET_ACQUISITION =  "reset";
-const std::string XspressListModeProcessPlugin::CONFIG_FLUSH_ACQUISITION =  "flush";
-const std::string XspressListModeProcessPlugin::CONFIG_FRAME_SIZE =         "frame_size";
+const std::string X3X2ListModeProcessPlugin::CONFIG_CHANNELS =           "channels";
+const std::string X3X2ListModeProcessPlugin::CONFIG_RESET_ACQUISITION =  "reset";
+const std::string X3X2ListModeProcessPlugin::CONFIG_FLUSH_ACQUISITION =  "flush";
+const std::string X3X2ListModeProcessPlugin::CONFIG_FRAME_SIZE =         "frame_size";
 
 #define XSP3_10GTX_SOF 0x80000000
 #define XSP3_10GTX_EOF 0x40000000
@@ -27,7 +24,7 @@ const std::string XspressListModeProcessPlugin::CONFIG_FRAME_SIZE =         "fra
 
 #define XSP3_HGT64_MASK_END_OF_FRAME			(1L<<59)
 
-XspressListModeMemoryBlock::XspressListModeMemoryBlock(const std::string& name) :
+X3X2ListModeMemoryBlock::X3X2ListModeMemoryBlock(const std::string& name) :
   ptr_(0),
   num_bytes_(0),
   num_words_(0),
@@ -35,29 +32,29 @@ XspressListModeMemoryBlock::XspressListModeMemoryBlock(const std::string& name) 
   frame_count_(0)
 {
   // Setup logging for the class
-  logger_ = Logger::getLogger("FP.XspressListModeProcessPlugin");
-  LOG4CXX_INFO(logger_, "Created XspressListModeMemoryBlock");
+  logger_ = Logger::getLogger("FP.X3X2ListModeProcessPlugin");
+  LOG4CXX_INFO(logger_, "Created X3X2ListModeMemoryBlock");
 
   name_ = name;
 }
 
-XspressListModeMemoryBlock::~XspressListModeMemoryBlock()
+X3X2ListModeMemoryBlock::~X3X2ListModeMemoryBlock()
 {
   if (ptr_){
     free(ptr_);
   }
 }
 
-void XspressListModeMemoryBlock::set_size(uint32_t bytes)
+void X3X2ListModeMemoryBlock::set_size(uint32_t bytes)
 {
   num_bytes_ = bytes;
   num_words_ = num_bytes_ / sizeof(uint64_t);
   reallocate();
 }
 
-void XspressListModeMemoryBlock::reallocate()
+void X3X2ListModeMemoryBlock::reallocate()
 {
-  LOG4CXX_INFO(logger_, "Reallocating XspressListModeMemoryBlock to [" << num_bytes_ << "] bytes");
+  LOG4CXX_INFO(logger_, "Reallocating X3X2ListModeMemoryBlock to [" << num_bytes_ << "] bytes");
   if (ptr_){
     free(ptr_);
   }
@@ -65,18 +62,18 @@ void XspressListModeMemoryBlock::reallocate()
   reset();
 }
 
-void XspressListModeMemoryBlock::reset()
+void X3X2ListModeMemoryBlock::reset()
 {
   memset(ptr_, 0, num_bytes_);
   filled_size_ = 0;
 }
 
-void XspressListModeMemoryBlock::reset_frame_count()
+void X3X2ListModeMemoryBlock::reset_frame_count()
 {
   frame_count_ = 0;
 }
 
-boost::shared_ptr <Frame> XspressListModeMemoryBlock::add_block(uint32_t bytes, void *ptr)
+boost::shared_ptr <Frame> X3X2ListModeMemoryBlock::add_block(uint32_t bytes, void *ptr)
 {
   boost::shared_ptr <Frame> frame;
 
@@ -130,7 +127,7 @@ boost::shared_ptr <Frame> XspressListModeMemoryBlock::add_block(uint32_t bytes, 
   return frame;
 }
 
-boost::shared_ptr <Frame> XspressListModeMemoryBlock::to_frame()
+boost::shared_ptr <Frame> X3X2ListModeMemoryBlock::to_frame()
 {
   boost::shared_ptr <Frame> frame;
 
@@ -149,7 +146,7 @@ boost::shared_ptr <Frame> XspressListModeMemoryBlock::to_frame()
   return frame;
 }
 
-boost::shared_ptr <Frame> XspressListModeMemoryBlock::flush()
+boost::shared_ptr <Frame> X3X2ListModeMemoryBlock::flush()
 {
   boost::shared_ptr <Frame> frame;
 
@@ -162,25 +159,25 @@ boost::shared_ptr <Frame> XspressListModeMemoryBlock::flush()
   return frame;
 }
 
-XspressListModeProcessPlugin::XspressListModeProcessPlugin() :
+X3X2ListModeProcessPlugin::X3X2ListModeProcessPlugin() :
   num_channels_(0)
 {
   // Setup logging for the class
-  logger_ = Logger::getLogger("FP.XspressListModeProcessPlugin");
-  LOG4CXX_INFO(logger_, "XspressListModeProcessPlugin version " << this->get_version_long() << " loaded");
+  logger_ = Logger::getLogger("FP.X3X2ListModeProcessPlugin");
+  LOG4CXX_INFO(logger_, "X3X2ListModeProcessPlugin version " << this->get_version_long() << " loaded");
 }
 
-XspressListModeProcessPlugin::~XspressListModeProcessPlugin()
+X3X2ListModeProcessPlugin::~X3X2ListModeProcessPlugin()
 {
-  LOG4CXX_TRACE(logger_, "XspressListModeProcessPlugin destructor.");
+  LOG4CXX_TRACE(logger_, "X3X2ListModeProcessPlugin destructor.");
 }
 
-void XspressListModeProcessPlugin::configure(OdinData::IpcMessage& config, OdinData::IpcMessage& reply) 
+void X3X2ListModeProcessPlugin::configure(OdinData::IpcMessage& config, OdinData::IpcMessage& reply) 
 {
-  if (config.has_param(XspressListModeProcessPlugin::CONFIG_CHANNELS)){
+  if (config.has_param(X3X2ListModeProcessPlugin::CONFIG_CHANNELS)){
     std::stringstream ss;
     ss << "Configure process plugin for channels [";
-    const rapidjson::Value& channels = config.get_param<const rapidjson::Value&>(XspressListModeProcessPlugin::CONFIG_CHANNELS);
+    const rapidjson::Value& channels = config.get_param<const rapidjson::Value&>(X3X2ListModeProcessPlugin::CONFIG_CHANNELS);
     std::vector<uint32_t> channel_vec;
     size_t num_channels = channels.Size();
     for (size_t i = 0; i < num_channels; i++) {
@@ -196,47 +193,47 @@ void XspressListModeProcessPlugin::configure(OdinData::IpcMessage& config, OdinD
     this->set_channels(channel_vec);
   }
 
-  if (config.has_param(XspressListModeProcessPlugin::CONFIG_RESET_ACQUISITION)){
+  if (config.has_param(X3X2ListModeProcessPlugin::CONFIG_RESET_ACQUISITION)){
     this->reset_acquisition();
   }
 
-  if (config.has_param(XspressListModeProcessPlugin::CONFIG_FLUSH_ACQUISITION)){
+  if (config.has_param(X3X2ListModeProcessPlugin::CONFIG_FLUSH_ACQUISITION)){
     this->flush_close_acquisition();
   }
 
-  if (config.has_param(XspressListModeProcessPlugin::CONFIG_FRAME_SIZE)){
-    unsigned int frame_size = config.get_param<unsigned int>(XspressListModeProcessPlugin::CONFIG_FRAME_SIZE);
+  if (config.has_param(X3X2ListModeProcessPlugin::CONFIG_FRAME_SIZE)){
+    unsigned int frame_size = config.get_param<unsigned int>(X3X2ListModeProcessPlugin::CONFIG_FRAME_SIZE);
     this->set_frame_size(frame_size);
   }
 }
 
 // Version functions
-int XspressListModeProcessPlugin::get_version_major() 
+int X3X2ListModeProcessPlugin::get_version_major() 
 {
   return XSPRESS_DETECTOR_VERSION_MAJOR;
 }
 
-int XspressListModeProcessPlugin::get_version_minor()
+int X3X2ListModeProcessPlugin::get_version_minor()
 {
   return XSPRESS_DETECTOR_VERSION_MINOR;
 }
 
-int XspressListModeProcessPlugin::get_version_patch()
+int X3X2ListModeProcessPlugin::get_version_patch()
 {
   return XSPRESS_DETECTOR_VERSION_PATCH;
 }
 
-std::string XspressListModeProcessPlugin::get_version_short()
+std::string X3X2ListModeProcessPlugin::get_version_short()
 {
   return XSPRESS_DETECTOR_VERSION_STR_SHORT;
 }
 
-std::string XspressListModeProcessPlugin::get_version_long()
+std::string X3X2ListModeProcessPlugin::get_version_long()
 {
   return XSPRESS_DETECTOR_VERSION_STR;
 }
 
-void XspressListModeProcessPlugin::set_channels(std::vector<uint32_t> channels)
+void X3X2ListModeProcessPlugin::set_channels(std::vector<uint32_t> channels)
 {
   channels_ = channels;
   num_channels_ = channels.size();
@@ -244,20 +241,20 @@ void XspressListModeProcessPlugin::set_channels(std::vector<uint32_t> channels)
   setup_memory_allocation();
 }
 
-void XspressListModeProcessPlugin::reset_acquisition()
+void X3X2ListModeProcessPlugin::reset_acquisition()
 {
   LOG4CXX_INFO(logger_, "Resetting acquisition");
-  std::map<uint32_t, boost::shared_ptr<XspressListModeMemoryBlock> >::iterator iter;
+  std::map<uint32_t, boost::shared_ptr<X3X2ListModeMemoryBlock> >::iterator iter;
   for (iter = memory_ptrs_.begin(); iter != memory_ptrs_.end(); ++iter){
     iter->second->reset_frame_count();
     iter->second->reset();
   }
 }
 
-void XspressListModeProcessPlugin::flush_close_acquisition()
+void X3X2ListModeProcessPlugin::flush_close_acquisition()
 {
   LOG4CXX_INFO(logger_, "Flushing and closing acquisition");
-  std::map<uint32_t, boost::shared_ptr<XspressListModeMemoryBlock> >::iterator iter;
+  std::map<uint32_t, boost::shared_ptr<X3X2ListModeMemoryBlock> >::iterator iter;
   for (iter = memory_ptrs_.begin(); iter != memory_ptrs_.end(); ++iter){
     LOG4CXX_DEBUG_LEVEL(0, logger_, "Flushing frame for channel " << iter->first);
     boost::shared_ptr <Frame> list_frame = iter->second->to_frame();
@@ -268,7 +265,7 @@ void XspressListModeProcessPlugin::flush_close_acquisition()
   this->notify_end_of_acquisition();
 }
 
-void XspressListModeProcessPlugin::set_frame_size(uint32_t num_bytes)
+void X3X2ListModeProcessPlugin::set_frame_size(uint32_t num_bytes)
 {
   LOG4CXX_INFO(logger_, "Setting frame size to " << num_bytes << " bytes");
   frame_size_bytes_ = num_bytes;
@@ -276,7 +273,7 @@ void XspressListModeProcessPlugin::set_frame_size(uint32_t num_bytes)
   setup_memory_allocation();
 }
 
-void XspressListModeProcessPlugin::setup_memory_allocation()
+void X3X2ListModeProcessPlugin::setup_memory_allocation()
 {
   // First clear out the memory vector emptying any blocks
   memory_ptrs_.clear();
@@ -287,7 +284,7 @@ void XspressListModeProcessPlugin::setup_memory_allocation()
   for (iter = channels_.begin(); iter != channels_.end(); ++iter){
     std::stringstream ss;
     ss << "raw_" << *iter;
-    boost::shared_ptr<XspressListModeMemoryBlock> ptr = boost::shared_ptr<XspressListModeMemoryBlock>(new XspressListModeMemoryBlock(ss.str()));
+    boost::shared_ptr<X3X2ListModeMemoryBlock> ptr = boost::shared_ptr<X3X2ListModeMemoryBlock>(new X3X2ListModeMemoryBlock(ss.str()));
     ptr->set_size(frame_size_bytes_);
     memory_ptrs_[*iter] = ptr;
     // Setup the storage vectors for the packet header information
@@ -301,7 +298,7 @@ void XspressListModeProcessPlugin::setup_memory_allocation()
  *
  * \param[out] status - Reference to an IpcMessage value to store the status.
  */
-void XspressListModeProcessPlugin::status(OdinData::IpcMessage& status)
+void X3X2ListModeProcessPlugin::status(OdinData::IpcMessage& status)
 {
   std::map<uint32_t, std::vector<uint32_t> >::iterator iter;
   for (iter = packet_headers_.begin(); iter != packet_headers_.end(); ++iter){
@@ -314,7 +311,7 @@ void XspressListModeProcessPlugin::status(OdinData::IpcMessage& status)
   }
 }
 
-void XspressListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame) 
+void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame) 
 {
   LOG4CXX_INFO(logger_, "Processing frame " << frame->get_frame_number());
   // char* frame_bytes = static_cast<char *>(frame->get_data_ptr());

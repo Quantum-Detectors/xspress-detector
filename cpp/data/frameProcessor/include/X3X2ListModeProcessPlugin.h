@@ -1,6 +1,6 @@
 
-#ifndef SRC_XSPRESSPLUGIN_H
-#define SRC_XSPRESSPLUGIN_H
+#ifndef SRC_X3X2LISTMODEPLUGIN_H
+#define SRC_X3X2LISTMODEPLUGIN_H
 
 #include <log4cxx/logger.h>
 #include <log4cxx/basicconfigurator.h>
@@ -94,4 +94,4 @@ namespace FrameProcessor
 }
 
 
-#endif //SRC_XSPRESSPLUGIN_H
+#endif //SRC_X3X2LISTMODEPLUGIN_H

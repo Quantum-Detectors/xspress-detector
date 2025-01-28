@@ -126,6 +126,7 @@ X3X2ListModeFrameDecoder::process_message(size_t bytes_received) {
     read_so_far_ = 0;
     // For now just send a single packet
     LOG4CXX_INFO(logger_, "Completed TCP frame: " << current_frame_number_ << ", buffer " << current_frame_buffer_id_);
+
     ready_callback_(current_frame_buffer_id_, current_frame_number_);
 
     // Increment TCP frame number

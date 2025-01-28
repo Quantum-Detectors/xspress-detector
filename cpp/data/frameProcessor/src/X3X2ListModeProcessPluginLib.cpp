@@ -1,7 +1,3 @@
-//
-// Created by gnx91527 on 2022/01/05.
-//
-
 #include "X3X2ListModeProcessPlugin.h"
 #include "ClassLoader.h"
 
