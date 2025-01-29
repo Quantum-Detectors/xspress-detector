@@ -30,7 +30,8 @@ X3X2ListModeFrameDecoder::X3X2ListModeFrameDecoder()
   this->logger_ = Logger::getLogger("FR.X3X2ListModeFrameDecoder");
   LOG4CXX_INFO(logger_, "X3X2ListModeFrameDecoder version "
                             << this->get_version_long() << " loaded");
-  // buffer can fit 5 frames by default
+
+  // The buffer will be 1 header and multiple TCP frames
   buffer_size_ = num_buffers_ * frame_size_;
   frame_buffer_.reset(new char[buffer_size_]);
 }
