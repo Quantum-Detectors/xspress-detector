@@ -87,11 +87,17 @@ void *X3X2ListModeFrameDecoder::get_next_message_buffer(void) {
       current_frame_buffer_id_ = 0;
     else
       current_frame_buffer_id_++;
+
+    // Update position to new frame in frame buffer
+    current_raw_buffer_ = buffer_manager_->get_buffer_address(current_frame_buffer_id_);
+    LOG4CXX_INFO(logger_, "New buffer position: " << current_raw_buffer_);
   }
-  current_raw_buffer_ =
-      buffer_manager_->get_buffer_address(current_frame_buffer_id_);
-  return static_cast<void *>(static_cast<char *>(current_raw_buffer_) +
-                             read_so_far_);
+
+  // Add offset based on where we are in the current frame
+  return static_cast<void *>(
+    static_cast<char *>(current_raw_buffer_) +
+    read_so_far_
+  );
 }
 
 //! Get the size of the frame buffers required for current operation mode.
@@ -125,27 +131,39 @@ X3X2ListModeFrameDecoder::process_message(size_t bytes_received) {
   LOG4CXX_INFO(logger_, "Processing " << bytes_received << " bytes");
   if (read_so_far_ + bytes_received == frame_size_) {
     read_so_far_ = 0;
-    // For now just send a single packet
-    LOG4CXX_INFO(logger_, "Completed TCP frame: " << current_frame_number_ << ", buffer " << current_frame_buffer_id_);
+    // For now just send a single TCP frame
+    LOG4CXX_INFO(logger_, "Completed TCP frame: " << current_frame_number_ << " in buffer " << current_frame_buffer_id_);
 
     ready_callback_(current_frame_buffer_id_, current_frame_number_);
 
-    // Increment TCP frame number
+    // Increment frame number
     current_frame_number_++;
 
-    return FrameDecoder::FrameReceiveStateComplete;
-  } else if (read_so_far_ + bytes_received < frame_size_) {
+    receive_state_ = FrameDecoder::FrameReceiveStateComplete;
+  }
+
+  else if (read_so_far_ + bytes_received < frame_size_) {
+    // We didn't receive a whole TCP frame
     read_so_far_ += bytes_received;
-    // track how many bytes have been received out of the
-    // required total and attempt to complete by yielding control back to Rx
-    // thread.
-    return FrameDecoder::FrameReceiveStateIncomplete;
-  } else
-    throw "Not Implemented: Can not handle case when too many bytes received";
+    receive_state_ = FrameDecoder::FrameReceiveStateIncomplete;
+  }
+
+  else throw "Not Implemented: Can not handle case when too many bytes received";
+
+  return receive_state_;
 }
 
+
+/**
+ * Get the size of the next message to receiver over the TCP socket
+ *
+ * X3X2 uses fixed 8192 byte TCP frames and pads as necessary so wait
+ * for this.
+ *
+ * \return The size of the next TCP message
+ */
 const size_t X3X2ListModeFrameDecoder::get_next_message_size(void) const {
-  return frame_size_ - read_so_far_;
+  return 8192;
 }
 
 void X3X2ListModeFrameDecoder::monitor_buffers(void) {}
