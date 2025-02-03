@@ -31,7 +31,7 @@ X3X2ListModeFrameDecoder::X3X2ListModeFrameDecoder()
   LOG4CXX_INFO(logger_, "X3X2ListModeFrameDecoder version "
                             << this->get_version_long() << " loaded");
 
-  // The buffer will be 1 header and multiple TCP frames
+  // The total buffer size which holds multiple frames
   buffer_size_ = num_buffers_ * frame_size_;
   frame_buffer_.reset(new char[buffer_size_]);
 }
@@ -108,7 +108,7 @@ void *X3X2ListModeFrameDecoder::get_next_message_buffer(void) {
 //! \return size of frame buffer in bytes
 //!
 const size_t X3X2ListModeFrameDecoder::get_frame_buffer_size(void) const {
-  return buffer_size_;
+  return frame_size_;
 }
 
 //! Get the size of the frame header.

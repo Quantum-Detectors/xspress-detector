@@ -317,26 +317,104 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
 
   uint16_t* frame_data = static_cast<uint16_t *>(frame->get_data_ptr());
 
-  uint16_t id;
-  uint16_t value;
+  // TODO: remove after testing
+  std::string ids("");
+  std::string values("");
+
+  // Event attributes
+  uint16_t acquisition_number = 0;
+  uint64_t time_frame = 0;
+  uint64_t time_stamp = 0;
+
+  uint64_t event_height = 0;
+
+  bool dummy_event = 0;
+  bool end_of_frame = 0;
+  bool ttl_a = 0;
+  bool ttl_b = 0;
 
   uint16_t channel = -1;
 
-  std::string ids("");
+  // Track number of events
+  unsigned int num_events = 0;
+  unsigned int num_resets = 0;
+  unsigned int num_padding = 0;
 
-  for (unsigned int field = 0; field < 16; field++)
+  uint16_t id;
+  uint16_t value;
+  uint64_t value_64;
+  // TODO: change 4096 from magic number to stored in definition somewhere
+  for (unsigned int field = 0; field < 4096; field++)
   {
+    // Decode field
     id = frame_data[field] >> 12;
     value = frame_data[field] & 0xFFF;
+    value_64 = (uint64_t) value; // TODO: could move assigned to where needed
 
-    ids += std::to_string(id) + ",";
+    // TODO: remove after testing
+    //ids += std::to_string(id) + ",";
+    //values += std::to_string(value) + ",";
 
-    if (id == 9) {
-      channel = value >> 8;
+    switch (id)
+    {
+      case 1:
+        acquisition_number = value;
+        break;
+      case 4:
+        end_of_frame = value & 0x1;
+        ttl_a = value & 0x2;
+        ttl_b = value & 0x4;
+        dummy_event = value & 0x8;
+        time_frame = (time_frame & 0xFFFFFFFFFFFFFF00) | value_64 >> 4;
+        break;
+      case 5:
+        time_frame = (time_frame & 0xFFFFFFFFFFF000FF) | value_64 << 8;
+        break;
+      case 6:
+        time_frame = (time_frame & 0xFFFFFFFF000FFFFF) | value_64 << 20;
+        break;
+      case 7:
+        time_frame = (time_frame & 0xFFFFF000FFFFFFFF) | value_64 << 32;
+        break;
+      case 8:
+        time_frame = (time_frame & 0xFF000FFFFFFFFFFF) | value_64 << 44;
+        break;
+      case 9:
+        channel = value >> 8;
+        time_frame = (time_frame & 0x00FFFFFFFFFFFFFF) | value_64 << 56;
+        break;
+      case 10:
+        time_stamp = (time_stamp & 0xFFFFFFFFF000) | value_64;
+        break;
+      case 11:
+        time_stamp = (time_stamp & 0xFFFFFF000FFF) | value_64 << 12;
+        break;
+      case 12:
+        time_stamp = (time_stamp & 0xFFF000FFFFFF) | value_64 << 24;
+        break;
+      case 13:
+        time_stamp = (time_stamp & 0x000FFFFFFFFF) | value_64 << 36;
+        break;
+      case 14:
+        // Reset event width
+        num_resets++;
+        break;
+      case 15:
+        num_padding++;
+        break;
+      case 0:
+        // Event height
+        event_height = value;
+        num_events++;
+        break;
     }
   }
 
-  LOG4CXX_INFO(logger_, "Got ids " << ids << " for channel " << channel);
+  // TODO: remove after testing
+  //LOG4CXX_INFO(logger_, "Got ids " << ids << " for channel " << channel);
+  //LOG4CXX_INFO(logger_, "Got values " << values << " for channel " << channel);
+  //LOG4CXX_INFO(logger_, "Time frame: " << time_frame);
+  LOG4CXX_INFO(logger_, "Events: " << num_events << ", Resets: " << num_resets << ", pad: " << num_padding);
 
 }
 
