@@ -100,12 +100,12 @@ void *X3X2ListModeFrameDecoder::get_next_message_buffer(void) {
   );
 }
 
-//! Get the size of the frame buffers required for current operation mode.
+//! Get the size of a single frame
 //!
 //! This method returns the frame buffer size required for the current operation
 //! mode.
 //!
-//! \return size of frame buffer in bytes
+//! \return size of a single frame in bytes
 //!
 const size_t X3X2ListModeFrameDecoder::get_frame_buffer_size(void) const {
   return frame_size_;
