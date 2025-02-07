@@ -5,6 +5,9 @@
 #include "XspressDefinitions.h"
 #include "DebugLevelLogger.h"
 
+// TODO: remove when tested
+#include <chrono>
+
 namespace FrameProcessor {
 
 const std::string X3X2ListModeProcessPlugin::CONFIG_CHANNELS =           "channels";
@@ -27,7 +30,6 @@ const std::string X3X2ListModeProcessPlugin::CONFIG_FRAME_SIZE =         "frame_
 X3X2ListModeMemoryBlock::X3X2ListModeMemoryBlock(const std::string& name) :
   ptr_(0),
   num_bytes_(0),
-  num_words_(0),
   filled_size_(0),
   frame_count_(0)
 {
@@ -47,8 +49,8 @@ X3X2ListModeMemoryBlock::~X3X2ListModeMemoryBlock()
 
 void X3X2ListModeMemoryBlock::set_size(uint32_t bytes)
 {
-  num_bytes_ = bytes;
-  num_words_ = num_bytes_ / sizeof(uint64_t);
+  // Round to nearest number of events
+  num_bytes_ = (bytes/num_bytes_per_event_)*num_bytes_per_event_;
   reallocate();
 }
 
@@ -73,52 +75,22 @@ void X3X2ListModeMemoryBlock::reset_frame_count()
   frame_count_ = 0;
 }
 
-boost::shared_ptr <Frame> X3X2ListModeMemoryBlock::add_block(uint32_t bytes, void *ptr)
+boost::shared_ptr <Frame> X3X2ListModeMemoryBlock::add_event(uint64_t time_frame, uint64_t time_stamp, uint64_t event_height)
 {
   boost::shared_ptr <Frame> frame;
 
   // Calculate the current end of data pointer location
   char *dest = (char *)ptr_;
   dest += filled_size_;
-  // Set the number of packet words as a 64bit variable
-  uint64_t pkt_words = (uint64_t)(bytes / sizeof(uint64_t));
 
-  if (filled_size_ == num_bytes_){
-    // Buffer is already full (this shouldn't really be possible but best to check)
-    frame = this->to_frame();
-  }
+  // Add the event
+  // *(reinterpret_cast<uint64_t>(dest)) = event_height;
+  *dest = event_height;
 
-  // Copy the number of words into the dataset
-  memcpy(dest, &pkt_words, sizeof(uint64_t));
+  // Move pointers
   dest += sizeof(uint64_t);
   filled_size_ += sizeof(uint64_t);
 
-  // Work out if adding the block will result in a full frame
-  if (filled_size_ + bytes < num_bytes_){
-    // We can copy the entire block into the store
-    memcpy(dest, ptr, bytes);
-    filled_size_ += bytes;
-  } else {
-    // Fill up the remainder of the block, create the frame and then copy over 
-    // any remaining bytes
-    uint32_t bytes_to_full = num_bytes_ - filled_size_;
-    if (bytes_to_full > 0){
-      memcpy(dest, ptr, bytes_to_full);
-    }
-
-    frame = this->to_frame();
-
-    // Copy any remaining data
-    uint32_t remaining_bytes = bytes - bytes_to_full;
-    if (remaining_bytes > 0){
-      dest = (char *)ptr_;
-      char *src = (char *)ptr;
-      src += bytes_to_full;
-      memcpy(dest, src, remaining_bytes);
-      filled_size_ += remaining_bytes;
-    }
-  }
-  
   // Final check, if we have a full buffer then send it out
   if (filled_size_ == num_bytes_){
     frame = this->to_frame();
@@ -313,7 +285,7 @@ void X3X2ListModeProcessPlugin::status(OdinData::IpcMessage& status)
 
 void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame) 
 {
-  LOG4CXX_INFO(logger_, "Processing frame " << frame->get_frame_number() << " of size " << frame->get_data_size() << " at " << frame->get_data_ptr());
+  // LOG4CXX_INFO(logger_, "Processing frame " << frame->get_frame_number() << " of size " << frame->get_data_size() << " at " << frame->get_data_ptr());
 
   uint16_t* frame_data = static_cast<uint16_t *>(frame->get_data_ptr());
 
@@ -365,35 +337,37 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
         ttl_a = value & 0x2;
         ttl_b = value & 0x4;
         dummy_event = value & 0x8;
-        time_frame = (time_frame & 0xFFFFFFFFFFFFFF00) | value_64 >> 4;
+        time_frame = (time_frame & 0xFFFFFFFFFFFFFF00) | (value_64 >> 4);
         break;
       case 5:
-        time_frame = (time_frame & 0xFFFFFFFFFFF000FF) | value_64 << 8;
+        time_frame = (time_frame & 0xFFFFFFFFFFF000FF) | (value_64 << 8);
         break;
       case 6:
-        time_frame = (time_frame & 0xFFFFFFFF000FFFFF) | value_64 << 20;
+        time_frame = (time_frame & 0xFFFFFFFF000FFFFF) | (value_64 << 20);
         break;
       case 7:
-        time_frame = (time_frame & 0xFFFFF000FFFFFFFF) | value_64 << 32;
+        time_frame = (time_frame & 0xFFFFF000FFFFFFFF) | (value_64 << 32);
         break;
       case 8:
-        time_frame = (time_frame & 0xFF000FFFFFFFFFFF) | value_64 << 44;
+        time_frame = (time_frame & 0xFF000FFFFFFFFFFF) | (value_64 << 44);
         break;
       case 9:
         channel = value >> 8;
-        time_frame = (time_frame & 0x00FFFFFFFFFFFFFF) | value_64 << 56;
+        // Check we have the right channel
+        if (memory_ptrs_.find(channel) == memory_ptrs_.end()) return;
+        time_frame = (time_frame & 0x00FFFFFFFFFFFFFF) | (value_64 << 56);
         break;
       case 10:
         time_stamp = (time_stamp & 0xFFFFFFFFF000) | value_64;
         break;
       case 11:
-        time_stamp = (time_stamp & 0xFFFFFF000FFF) | value_64 << 12;
+        time_stamp = (time_stamp & 0xFFFFFF000FFF) | (value_64 << 12);
         break;
       case 12:
-        time_stamp = (time_stamp & 0xFFF000FFFFFF) | value_64 << 24;
+        time_stamp = (time_stamp & 0xFFF000FFFFFF) | (value_64 << 24);
         break;
       case 13:
-        time_stamp = (time_stamp & 0x000FFFFFFFFF) | value_64 << 36;
+        time_stamp = (time_stamp & 0x000FFFFFFFFF) | (value_64 << 36);
         break;
       case 14:
         // Reset event width
@@ -405,6 +379,18 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
       case 0:
         // Event height
         event_height = value;
+
+        // TODO: remove when tested
+        //LOG4CXX_INFO(logger_, "Got values: " << time_frame << ", " << time_stamp << ", " << event_height << " for first event ");
+        //return
+
+        // Add event
+        boost::shared_ptr <Frame> list_frame = (memory_ptrs_[channel])->add_event(time_frame, time_stamp, event_height);
+        if (list_frame){
+          LOG4CXX_DEBUG_LEVEL(1, logger_, "Completed frame for channel " << channel << ", pushing");
+          // There is a full frame available for pushing
+          this->push(list_frame);
+        }
         num_events++;
         break;
     }
@@ -414,7 +400,7 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
   //LOG4CXX_INFO(logger_, "Got ids " << ids << " for channel " << channel);
   //LOG4CXX_INFO(logger_, "Got values " << values << " for channel " << channel);
   //LOG4CXX_INFO(logger_, "Time frame: " << time_frame);
-  LOG4CXX_INFO(logger_, "Events: " << num_events << ", Resets: " << num_resets << ", pad: " << num_padding);
+  //LOG4CXX_INFO(logger_, "Events: " << num_events << ", Resets: " << num_resets << ", pad: " << num_padding);
 
 }
 
