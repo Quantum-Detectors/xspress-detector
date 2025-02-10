@@ -34,7 +34,7 @@ namespace FrameProcessor
     void *ptr_;
     std::string name_;
     uint32_t num_bytes_;
-    uint32_t filled_size_;
+    uint32_t filled_size_;  // Filled size in bytes
     uint32_t frame_count_;
 
     const uint32_t num_bytes_per_event_ = 8;

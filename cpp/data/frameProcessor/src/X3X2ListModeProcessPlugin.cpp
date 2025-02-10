@@ -85,10 +85,8 @@ boost::shared_ptr <Frame> X3X2ListModeMemoryBlock::add_event(uint64_t time_frame
 
   // Add the event
   // *(reinterpret_cast<uint64_t>(dest)) = event_height;
-  *dest = event_height;
+  *((uint64_t *)dest) = event_height;
 
-  // Move pointers
-  dest += sizeof(uint64_t);
   filled_size_ += sizeof(uint64_t);
 
   // Final check, if we have a full buffer then send it out
