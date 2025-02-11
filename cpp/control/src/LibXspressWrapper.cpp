@@ -878,6 +878,7 @@ int LibXspressWrapper::get_num_frames_read(int32_t *frames)
 int LibXspressWrapper::get_num_scalars(uint32_t *num_scalars)
 {
   *num_scalars = XSP3_SW_NUM_SCALERS;
+  return XSP_STATUS_OK;
 }
 
 int LibXspressWrapper::histogram_circ_ack(int channel,
@@ -947,6 +948,25 @@ int LibXspressWrapper::histogram_stop(int card)
     status = XSP_STATUS_ERROR;
   }
   return status;
+}
+
+/**
+ * This function checcks if any of the channels are still busy
+ * histogramming (for idle checking)
+ *
+ * In the Xspress library it says to check for idle twice in a row
+ * after sleeping 10ms to confirm idle state.
+ *
+ * @return 1 for busy, 0 for idle or -1 for error
+ */
+int LibXspressWrapper::histogram_is_any_busy()
+{
+  int xsp_status = xsp3_histogram_is_any_busy(xsp_handle_);
+  if (xsp_status < XSP3_OK){
+    checkErrorCode("xsp3_histogram_is_any_busy", xsp_status);
+    return XSP_STATUS_ERROR;
+  }
+  else return xsp_status;
 }
 
 int LibXspressWrapper::string_trigger_mode_to_int(const std::string& mode)

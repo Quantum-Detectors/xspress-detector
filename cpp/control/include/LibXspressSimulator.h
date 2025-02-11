@@ -126,6 +126,7 @@ public:
   int histogram_continue(int card);
   int histogram_pause(int card);
   int histogram_stop(int card);
+  int histogram_is_any_busy();
   int string_trigger_mode_to_int(const std::string& mode);
   int scaler_read(uint32_t *buffer,
                   uint32_t tf,

@@ -24,6 +24,7 @@ XspressDetector::XspressDetector(bool simulation) :
     logger_(log4cxx::Logger::getLogger("Xspress.XspressDetector")),
     simulated_(simulation),
     connected_(false),
+    acquiring_(false),
     reconnect_required_(false),
     acq_failed_(false),
     xsp_num_cards_(0),
@@ -579,6 +580,9 @@ int XspressDetector::stopAcquisition()
       }
     }
     status = detector_->histogram_stop(-1);
+
+    // We can return to idle immediately after stopping hist in list mode
+    if (xsp_mode_ == XSP_MODE_LIST) acquiring_ = false;
   }
   return status;
 }
