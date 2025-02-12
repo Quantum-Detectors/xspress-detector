@@ -15,18 +15,6 @@ const std::string X3X2ListModeProcessPlugin::CONFIG_RESET_ACQUISITION =  "reset"
 const std::string X3X2ListModeProcessPlugin::CONFIG_FLUSH_ACQUISITION =  "flush";
 const std::string X3X2ListModeProcessPlugin::CONFIG_FRAME_SIZE =         "frame_size";
 
-#define XSP3_10GTX_SOF 0x80000000
-#define XSP3_10GTX_EOF 0x40000000
-#define XSP3_10GTX_PAD 0x20000000
-#define XSP3_10GTX_PACKET_MASK 0x0FFFFFFF
-
-
-#define XSP3_HGT64_SOF_GET_FRAME(x)       (((x)>>0)&0xFFFFFF)     //!< Get time frame from first (header) word
-#define XSP3_HGT64_SOF_GET_PREV_TIME(x)   (((x)>>24)&0xFFFFFFFF)  //!< Get total integration time from previous time frame from first (header) word
-#define XSP3_HGT64_SOF_GET_CHAN(x)        (((x)>>60)&0xF)         //!< Get channel number from first (header) word
-
-#define XSP3_HGT64_MASK_END_OF_FRAME			(1L<<59)
-
 X3X2ListModeMemoryBlock::X3X2ListModeMemoryBlock(const std::string& name) :
   ptr_(0),
   num_bytes_(0),
@@ -49,7 +37,7 @@ X3X2ListModeMemoryBlock::~X3X2ListModeMemoryBlock()
 
 void X3X2ListModeMemoryBlock::set_size(uint32_t bytes)
 {
-  // Round to nearest number of events
+  // Round allocation down to number of whole events
   num_bytes_ = (bytes/num_bytes_per_event_)*num_bytes_per_event_;
   reallocate();
 }
@@ -85,9 +73,11 @@ boost::shared_ptr <Frame> X3X2ListModeMemoryBlock::add_event(uint64_t time_frame
 
   // Add the event
   // *(reinterpret_cast<uint64_t>(dest)) = event_height;
-  *((uint64_t *)dest) = event_height;
+  *((uint64_t *)dest) = time_frame;
+  *((uint64_t *)(dest) + 1) = time_stamp;
+  *((uint64_t *)(dest) + 2) = event_height;
 
-  filled_size_ += sizeof(uint64_t);
+  filled_size_ += 3*sizeof(uint64_t);
 
   // Final check, if we have a full buffer then send it out
   if (filled_size_ == num_bytes_){
@@ -388,6 +378,10 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
           LOG4CXX_DEBUG_LEVEL(1, logger_, "Completed frame for channel " << channel << ", pushing");
           // There is a full frame available for pushing
           this->push(list_frame);
+        }
+        if (end_of_frame)
+        {
+          LOG4CXX_INFO(logger_, "Channel " << channel << " got end of frame for frame " << time_frame);
         }
         num_events++;
         break;

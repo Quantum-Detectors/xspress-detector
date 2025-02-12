@@ -37,7 +37,7 @@ namespace FrameProcessor
     uint32_t filled_size_;  // Filled size in bytes
     uint32_t frame_count_;
 
-    const uint32_t num_bytes_per_event_ = 8;
+    const uint32_t num_bytes_per_event_ = 24;
 
     /** Pointer to logger */
     LoggerPtr logger_;
