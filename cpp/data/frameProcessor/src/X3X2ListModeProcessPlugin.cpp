@@ -120,7 +120,8 @@ boost::shared_ptr <Frame> X3X2ListModeMemoryBlock::flush()
 }
 
 X3X2ListModeProcessPlugin::X3X2ListModeProcessPlugin() :
-  num_channels_(0)
+  num_channels_(0),
+  channel_offset_(0)
 {
   // Setup logging for the class
   logger_ = Logger::getLogger("FP.X3X2ListModeProcessPlugin");
@@ -197,6 +198,10 @@ void X3X2ListModeProcessPlugin::set_channels(std::vector<uint32_t> channels)
 {
   channels_ = channels;
   num_channels_ = channels.size();
+  // TCP frames only report as channels 0 and 1 - we need to store
+  // the offset so we can report the correct system channels to the file
+  // writer
+  channel_offset_ = channels_[0];
   // We must reallocate memory blocks
   setup_memory_allocation();
 }
@@ -340,9 +345,13 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
         time_frame = (time_frame & 0xFF000FFFFFFFFFFF) | (value_64 << 44);
         break;
       case 9:
-        channel = value >> 8;
-        // Check we have the right channel
-        if (memory_ptrs_.find(channel) == memory_ptrs_.end()) return;
+        // Calculate actual channel in system
+        channel = (value >> 8) + channel_offset_;
+        // Check we have the right channel (and ignore markers)
+        if (memory_ptrs_.find(channel) == memory_ptrs_.end()) {
+          // LOG4CXX_INFO(logger_, "Got wrong channel " << channel);
+          return;
+        }
         time_frame = (time_frame & 0x00FFFFFFFFFFFFFF) | (value_64 << 56);
         break;
       case 10:
@@ -381,7 +390,7 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
         }
         if (end_of_frame)
         {
-          LOG4CXX_INFO(logger_, "Channel " << channel << " got end of frame for frame " << time_frame);
+          // LOG4CXX_INFO(logger_, "Channel " << channel << " got end of frame for frame " << time_frame);
         }
         num_events++;
         break;

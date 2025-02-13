@@ -90,7 +90,6 @@ void *X3X2ListModeFrameDecoder::get_next_message_buffer(void) {
 
     // Update position to new frame in frame buffer
     current_raw_buffer_ = buffer_manager_->get_buffer_address(current_frame_buffer_id_);
-    LOG4CXX_INFO(logger_, "New buffer position: " << current_raw_buffer_);
   }
 
   // Add offset based on where we are in the current frame
@@ -128,11 +127,11 @@ const size_t X3X2ListModeFrameDecoder::get_frame_header_size(void) const {
  */
 FrameDecoder::FrameReceiveState
 X3X2ListModeFrameDecoder::process_message(size_t bytes_received) {
-  LOG4CXX_INFO(logger_, "Processing " << bytes_received << " bytes");
+  // LOG4CXX_INFO(logger_, "Processing " << bytes_received << " bytes");
   if (read_so_far_ + bytes_received == frame_size_) {
     read_so_far_ = 0;
     // For now just send a single TCP frame
-    LOG4CXX_INFO(logger_, "Completed TCP frame: " << current_frame_number_ << " in buffer " << current_frame_buffer_id_);
+    // LOG4CXX_INFO(logger_, "Completed TCP frame: " << current_frame_number_ << " in buffer " << current_frame_buffer_id_);
 
     ready_callback_(current_frame_buffer_id_, current_frame_number_);
 

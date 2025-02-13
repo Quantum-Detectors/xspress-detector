@@ -79,6 +79,7 @@ namespace FrameProcessor
     uint32_t frame_size_bytes_;
     std::vector<uint32_t> channels_;
     uint32_t num_channels_;
+    uint32_t channel_offset_;
 
     std::map<uint32_t, boost::shared_ptr<X3X2ListModeMemoryBlock> > memory_ptrs_;
     std::map<uint32_t, std::vector<uint32_t> > packet_headers_;
