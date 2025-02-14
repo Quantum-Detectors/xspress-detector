@@ -162,7 +162,7 @@ X3X2ListModeFrameDecoder::process_message(size_t bytes_received) {
  * \return The size of the next TCP message
  */
 const size_t X3X2ListModeFrameDecoder::get_next_message_size(void) const {
-  return 8192;
+  return X3X2_MINI_TCP_FRAME_SIZE;
 }
 
 void X3X2ListModeFrameDecoder::monitor_buffers(void) {}

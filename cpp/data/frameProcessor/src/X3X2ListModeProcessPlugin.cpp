@@ -2,7 +2,7 @@
 #include "DataBlockFrame.h"
 #include "X3X2ListModeProcessPlugin.h"
 #include "FrameProcessorDefinitions.h"
-#include "XspressDefinitions.h"
+#include "X3X2Definitions.h"
 #include "DebugLevelLogger.h"
 
 // TODO: remove when tested
@@ -308,8 +308,8 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
   uint16_t id;
   uint16_t value;
   uint64_t value_64;
-  // TODO: change 4096 from magic number to stored in definition somewhere
-  for (unsigned int field = 0; field < 4096; field++)
+
+  for (unsigned int field = 0; field < X3X2_MINI_FIELDS_PER_FRAME; field++)
   {
     // Decode field
     id = frame_data[field] >> 12;
@@ -384,7 +384,7 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
         // Add event
         boost::shared_ptr <Frame> list_frame = (memory_ptrs_[channel])->add_event(time_frame, time_stamp, event_height);
         if (list_frame){
-          LOG4CXX_DEBUG_LEVEL(1, logger_, "Completed frame for channel " << channel << ", pushing");
+          // LOG4CXX_DEBUG_LEVEL(1, logger_, "Completed frame for channel " << channel << ", pushing");
           // There is a full frame available for pushing
           this->push(list_frame);
         }
