@@ -14,6 +14,7 @@ const std::string X3X2ListModeProcessPlugin::CONFIG_CHANNELS =           "channe
 const std::string X3X2ListModeProcessPlugin::CONFIG_RESET_ACQUISITION =  "reset";
 const std::string X3X2ListModeProcessPlugin::CONFIG_FLUSH_ACQUISITION =  "flush";
 const std::string X3X2ListModeProcessPlugin::CONFIG_FRAME_SIZE =         "frame_size";
+const std::string X3X2ListModeProcessPlugin::CONFIG_TIME_FRAMES =        "time_frames";
 
 X3X2ListModeMemoryBlock::X3X2ListModeMemoryBlock(const std::string& name) :
   ptr_(0),
@@ -121,7 +122,9 @@ boost::shared_ptr <Frame> X3X2ListModeMemoryBlock::flush()
 
 X3X2ListModeProcessPlugin::X3X2ListModeProcessPlugin() :
   num_channels_(0),
-  channel_offset_(0)
+  channel_offset_(0),
+  num_time_frames_(0),
+  num_completed_channels_(0)
 {
   // Setup logging for the class
   logger_ = Logger::getLogger("FP.X3X2ListModeProcessPlugin");
@@ -166,6 +169,12 @@ void X3X2ListModeProcessPlugin::configure(OdinData::IpcMessage& config, OdinData
     unsigned int frame_size = config.get_param<unsigned int>(X3X2ListModeProcessPlugin::CONFIG_FRAME_SIZE);
     this->set_frame_size(frame_size);
   }
+
+  if (config.has_param(X3X2ListModeProcessPlugin::CONFIG_TIME_FRAMES)){
+    num_time_frames_ = config.get_param<unsigned int>(X3X2ListModeProcessPlugin::CONFIG_TIME_FRAMES);
+    LOG4CXX_INFO(logger_, "Number of time frames has been set to  " << num_time_frames_);
+  }
+
 }
 
 // Version functions
@@ -214,6 +223,8 @@ void X3X2ListModeProcessPlugin::reset_acquisition()
     iter->second->reset_frame_count();
     iter->second->reset();
   }
+
+  num_completed_channels_ = 0;
 }
 
 void X3X2ListModeProcessPlugin::flush_close_acquisition()
@@ -366,16 +377,27 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
       case 13:
         time_stamp = (time_stamp & 0x000FFFFFFFFF) | (value_64 << 36);
         break;
+      case 15:
+        num_padding++;
+        break;
       case 14:
         // Reset event width
         num_resets++;
-        break;
-      case 15:
-        num_padding++;
+        if (end_of_frame)
+        {
+          LOG4CXX_INFO(logger_, "Channel " << channel << " got end of frame for frame " << time_frame <<  " need: " << num_time_frames_);
+          if (time_frame + 1 == num_time_frames_)
+          {
+            LOG4CXX_INFO(logger_, "Acquisition of " << num_time_frames_ << " frames complete for channel " << channel);
+            num_completed_channels_++;
+          }
+        }
         break;
       case 0:
         // Event height
         event_height = value;
+
+        // TODO: account for dummy events
 
         // TODO: remove when tested
         //LOG4CXX_INFO(logger_, "Got values: " << time_frame << ", " << time_stamp << ", " << event_height << " for first event ");
@@ -390,11 +412,23 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
         }
         if (end_of_frame)
         {
-          // LOG4CXX_INFO(logger_, "Channel " << channel << " got end of frame for frame " << time_frame);
+          LOG4CXX_INFO(logger_, "Channel " << channel << " got end of frame for frame " << time_frame);
+          if (time_frame + 1 == num_time_frames_)
+          {
+            LOG4CXX_INFO(logger_, "Acquisition of " << num_time_frames_ << " frames complete for channel " << channel);
+            num_completed_channels_++;
+          }
         }
         num_events++;
         break;
     }
+  }
+
+  if (num_completed_channels_ == num_channels_)
+  {
+    LOG4CXX_INFO(logger_, "Acquisition of " << num_time_frames_ << " frames completed for all channels");
+    // TODO: confirm we close nicely - call flush_close_acquisition?
+    this->notify_end_of_acquisition();
   }
 
   // TODO: remove after testing

@@ -111,7 +111,8 @@ class FPXspressAdapter(FrameProcessorAdapter):
                         # The file path is the same for all clients
                         parameters = {
                             'hdf': {
-                                'frames': self._param['config/hdf/frames']
+                                # Zero for X3X2 list mode as processor ends acquisition
+                                'frames': 0
                             }
                         }
                         # Send the number of frames first
@@ -169,7 +170,10 @@ class FPXspressAdapter(FrameProcessorAdapter):
                         "acq_id": self._param["config/hdf/acquisition_id"],
                         "chunks": int(self._batch_size),
                     },
-                    "xspress-list": {"reset": True},
+                    "xspress-list": {
+                        "reset": True,
+                        "time_frames": self._param["config/hdf/frames"],
+                    },
                 }
                 logging.warning("Sending: {}".format(parameters))
                 client.send_configuration(parameters)

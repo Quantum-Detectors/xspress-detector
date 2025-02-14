@@ -75,11 +75,13 @@ namespace FrameProcessor
     void status(OdinData::IpcMessage& status);
     void process_frame(boost::shared_ptr <Frame> frame);
 
-    uint32_t frame_count_;
     uint32_t frame_size_bytes_;
     std::vector<uint32_t> channels_;
     uint32_t num_channels_;
     uint32_t channel_offset_;
+
+    uint32_t num_time_frames_;
+    uint32_t num_completed_channels_;
 
     std::map<uint32_t, boost::shared_ptr<X3X2ListModeMemoryBlock> > memory_ptrs_;
     std::map<uint32_t, std::vector<uint32_t> > packet_headers_;
@@ -88,6 +90,7 @@ namespace FrameProcessor
     static const std::string CONFIG_RESET_ACQUISITION;
     static const std::string CONFIG_FLUSH_ACQUISITION;
     static const std::string CONFIG_FRAME_SIZE;
+    static const std::string CONFIG_TIME_FRAMES;
 
     /** Pointer to logger */
     LoggerPtr logger_;
