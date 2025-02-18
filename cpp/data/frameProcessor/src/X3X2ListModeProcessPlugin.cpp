@@ -5,8 +5,6 @@
 #include "X3X2Definitions.h"
 #include "DebugLevelLogger.h"
 
-// TODO: remove when tested
-#include <chrono>
 
 namespace FrameProcessor {
 
@@ -325,7 +323,7 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
     // Decode field
     id = frame_data[field] >> 12;
     value = frame_data[field] & 0xFFF;
-    value_64 = (uint64_t) value; // TODO: could move assigned to where needed
+    value_64 = (uint64_t) value;
 
     // TODO: remove after testing
     //ids += std::to_string(id) + ",";
@@ -360,7 +358,6 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
         channel = (value >> 8) + channel_offset_;
         // Check we have the right channel (and ignore markers)
         if (memory_ptrs_.find(channel) == memory_ptrs_.end()) {
-          // LOG4CXX_INFO(logger_, "Got wrong channel " << channel);
           return;
         }
         time_frame = (time_frame & 0x00FFFFFFFFFFFFFF) | (value_64 << 56);
