@@ -607,6 +607,7 @@ int LibXspressSimulator::get_num_frames_read(int32_t *frames)
 int LibXspressSimulator::get_num_scalars(uint32_t *num_scalars)
 {
   *num_scalars = XSP3_SW_NUM_SCALERS;
+  return XSP_STATUS_OK;
 }
 
 int LibXspressSimulator::histogram_circ_ack(int channel,
@@ -615,13 +616,6 @@ int LibXspressSimulator::histogram_circ_ack(int channel,
                                           uint32_t max_channels)
 {
   int status = XSP_STATUS_OK;
-  /*
-  int xsp_status = xsp3_histogram_circ_ack(xsp_handle_, channel, frame_number, max_channels, number_of_frames);
-  if (xsp_status < XSP3_OK) {
-    checkErrorCode("xsp3_histogram_circ_ack", xsp_status);
-    status = XSP_STATUS_ERROR;
-  }
-  */
   return status;
 }
 
@@ -700,6 +694,12 @@ int LibXspressSimulator::histogram_stop(int card)
   }
   */
   return status;
+}
+
+int LibXspressSimulator::histogram_is_any_busy()
+{
+  // 0 indicates idle
+  return 0;
 }
 
 int LibXspressSimulator::string_trigger_mode_to_int(const std::string& mode)

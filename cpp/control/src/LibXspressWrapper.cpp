@@ -878,6 +878,7 @@ int LibXspressWrapper::get_num_frames_read(int32_t *frames)
 int LibXspressWrapper::get_num_scalars(uint32_t *num_scalars)
 {
   *num_scalars = XSP3_SW_NUM_SCALERS;
+  return XSP_STATUS_OK;
 }
 
 int LibXspressWrapper::histogram_circ_ack(int channel,
@@ -947,6 +948,25 @@ int LibXspressWrapper::histogram_stop(int card)
     status = XSP_STATUS_ERROR;
   }
   return status;
+}
+
+/**
+ * This function checcks if any of the channels are still busy
+ * histogramming (for idle checking)
+ *
+ * In the Xspress library it says to check for idle twice in a row
+ * after sleeping 10ms to confirm idle state.
+ *
+ * @return 1 for busy, 0 for idle or -1 for error
+ */
+int LibXspressWrapper::histogram_is_any_busy()
+{
+  int xsp_status = xsp3_histogram_is_any_busy(xsp_handle_);
+  if (xsp_status < XSP3_OK){
+    checkErrorCode("xsp3_histogram_is_any_busy", xsp_status);
+    return XSP_STATUS_ERROR;
+  }
+  else return xsp_status;
 }
 
 int LibXspressWrapper::string_trigger_mode_to_int(const std::string& mode)
@@ -1246,16 +1266,6 @@ int LibXspressWrapper::enable_list_mode_resets()
   if (xsp3_is_xsp3m_plus(0) == 1)
   {
     LOG4CXX_DEBUG_LEVEL(1, logger_, "Xspress wrapper enabling list mode resets for X3X2");
-
-    // The second general control register is used - apply to all channels
-    /*
-    int xsp_status = xsp3_set_chan_cont2(xsp_handle_, -1, XSP3M_CC2_SEND_RESET_WIDTHS);
-    if (xsp_status < 0)
-    {
-      checkErrorCode("xsp3_set_chan_cont2", xsp_status);
-      status = XSP_STATUS_ERROR;
-    }
-    */
 
     // Need to enable each channel individually to preserve the current control register value
     int num_chan = xsp3_get_num_chan(xsp_handle_);

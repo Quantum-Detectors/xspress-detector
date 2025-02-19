@@ -155,6 +155,7 @@ public:
   virtual int histogram_continue(int card) = 0;
   virtual int histogram_pause(int card) = 0;
   virtual int histogram_stop(int card) = 0;
+  virtual int histogram_is_any_busy() = 0;
   virtual int string_trigger_mode_to_int(const std::string& mode) = 0;
   virtual int scaler_read(uint32_t *buffer,
                   uint32_t tf,
