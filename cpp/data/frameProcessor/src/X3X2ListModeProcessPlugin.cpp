@@ -424,8 +424,7 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
   if (num_completed_channels_ == num_channels_)
   {
     LOG4CXX_INFO(logger_, "Acquisition of " << num_time_frames_ << " frames completed for all channels");
-    // TODO: confirm we close nicely - call flush_close_acquisition?
-    this->notify_end_of_acquisition();
+    this->flush_close_acquisition();
   }
 
   // TODO: remove after testing
