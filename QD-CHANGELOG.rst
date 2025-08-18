@@ -3,6 +3,16 @@ Change log
 
 Changes made by Quantum Detectors to this repository are recorded below.
 
+
+Unreleased
+----------
+
+Changed:
+
+- Changed the number of processes used in list mode and MCA mode to be the same
+  (relevant for Mk2 Xspress)
+
+
 0.5.0+qd0.2
 -----------
 

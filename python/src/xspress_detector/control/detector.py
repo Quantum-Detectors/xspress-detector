@@ -47,7 +47,7 @@ XSPRESS_MODE_LIST = "list"
 XSPRESS_EXPOSURE_LOWER_LIMIT = 1.0 / 1000000
 XSPRESS_EXPOSURE_UPPER_LIMIT = 20.0
 
-NUM_FR_MCA = 9
+NUM_FR_MCA = 8
 NUM_FR_LIST = 8
 
 FR_INIT_TIME = {
@@ -773,12 +773,15 @@ class XspressDetector(object):
     def num_chan_per_process_list(self):
         """
         max_channels: in list mode is mca_channels+1.
-        For list mode the last process will sometimes have less 'active' channels, as each card has 10 chans (I believe).
+        For list mode the last process will sometimes have fewer 'active' channels, as each card has 10 chans (I believe).
         e.g. when mca_channels = 36 and list_channels = 37,
         then num_chan_per_process_list = 5 if num_process_list = 8,
         or num_chan_per_process_list = 40 if num_process_list = 1,
         """
-        return nearest_mult_of_5_up(self.mca_channels) // self.num_process_list
+        # TODO: work out why Xspress 4 needed a different number of processors
+        # for list mode vs MCA mode
+        # return nearest_mult_of_5_up(self.mca_channels) // self.num_process_list
+        return self.num_chan_per_process_mca
 
     @property
     def num_chan_per_process_mca(self):
@@ -805,9 +808,9 @@ class XspressDetector(object):
         list_command = {"execute": {"index": "list"}}
         mca_command = {"execute": {"index": "mca"}, "hdf": {"dataset": {}}}
         command = mca_command if mode == XSPRESS_MODE_MCA else list_command
-        num_process = (
-            self.num_process_mca if mode == XSPRESS_MODE_MCA else self.num_process_list
-        )
+        # TODO: check why Xspress 4 has a different number of FPs and FRs
+        num_process = self.num_process_mca
+        logging.warning(f"Configuring {num_process} frame processors for mode {mode}")
         # must copy otherwise we'll modify the same dict later
         configs = [copy.deepcopy(command) for _ in range(num_process)]
 
@@ -822,7 +825,7 @@ class XspressDetector(object):
             tasks += (asyncio.create_task(self.async_send_task(client, config)),)
         result = await asyncio.gather(*tasks)
 
-    async def configure_frs(self, mode: int):
+    async def configure_frs(self, mode: str):
         """Configure the frame receivers for the acquisition mode selected
 
         MCA mode:
@@ -841,7 +844,7 @@ class XspressDetector(object):
           data
 
         Args:
-            mode (int): Acquisition mode
+            mode (str): Acquisition mode
 
         Raises:
             ValueError: raised if an invalid acquisition mode is selected
