@@ -11,12 +11,12 @@ from functools import partial
 from datetime import datetime
 from contextlib import suppress
 from numbers import Number as number
+from typing import Any
 
 from odin.adapters.adapter import ApiAdapterRequest, ApiAdapter
 from odin_data.control.ipc_message import IpcMessage
 
 from .client import AsyncClient
-from .util import ListModeIPPortGen
 from .debug import debug_method
 from .parameter_tree import (
     WriteOnlyVirtualParameter,
@@ -778,9 +778,10 @@ class XspressDetector(object):
         then num_chan_per_process_list = 5 if num_process_list = 8,
         or num_chan_per_process_list = 40 if num_process_list = 1,
         """
-        # TODO: work out why Xspress 4 needed a different number of processors
-        # for list mode vs MCA mode
-        # return nearest_mult_of_5_up(self.mca_channels) // self.num_process_list
+        # For Xspress Mk2 we have the same number of of channels per process
+        # in list mode and MCA mode (i.e. 2 - 1 card per FR/FP pair).
+        # TODO: handle both Xspress 4 and X3X2 systems - probably by adding
+        # a configuration flag to say we are using a Mk2 system.
         return self.num_chan_per_process_mca
 
     @property
@@ -808,9 +809,10 @@ class XspressDetector(object):
         list_command = {"execute": {"index": "list"}}
         mca_command = {"execute": {"index": "mca"}, "hdf": {"dataset": {}}}
         command = mca_command if mode == XSPRESS_MODE_MCA else list_command
-        # TODO: check why Xspress 4 has a different number of FPs and FRs
-        num_process = self.num_process_mca
-        logging.warning(f"Configuring {num_process} frame processors for mode {mode}")
+        num_process = (
+            self.num_process_mca if mode == XSPRESS_MODE_MCA else self.num_process_list
+        )
+        logging.info(f"Configuring {num_process} processors for {mode} mode")
         # must copy otherwise we'll modify the same dict later
         configs = [copy.deepcopy(command) for _ in range(num_process)]
 
@@ -823,7 +825,7 @@ class XspressDetector(object):
         tasks = ()
         for client, config in zip(self.fp_clients, configs):
             tasks += (asyncio.create_task(self.async_send_task(client, config)),)
-        result = await asyncio.gather(*tasks)
+        await asyncio.gather(*tasks)
 
     async def configure_frs(self, mode: str):
         """Configure the frame receivers for the acquisition mode selected
@@ -952,7 +954,7 @@ class XspressDetector(object):
     def _set(self, attr_name, value):
         setattr(self, attr_name, value)
 
-    async def _put(self, message_type: MessageType, config_str: str, value: any):
+    async def _put(self, message_type: MessageType, config_str: str, value: Any):
         self.logger.debug(debug_method())
         if not self._async_client.is_connected():
             raise ConnectionError(

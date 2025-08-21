@@ -3,11 +3,8 @@ Created on March 2022
 
 :author: Alan Greer
 """
-import json
 import logging
 import os
-import asyncio
-import time
 
 from odin_data.control.odin_data_adapter import OdinDataAdapter
 from odin_data.control.frame_processor_adapter import FrameProcessorAdapter
@@ -17,7 +14,7 @@ from odin.adapters.adapter import (
     response_types,
 )
 from tornado import escape
-from tornado.escape import json_encode, json_decode
+from tornado.escape import json_decode
 
 
 def bool_from_string(value):
