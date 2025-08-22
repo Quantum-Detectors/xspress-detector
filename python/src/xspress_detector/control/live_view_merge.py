@@ -1,12 +1,7 @@
 import zmq
-import struct
-import numpy as np
 import json
 import argparse
-from datetime import datetime
 import logging
-
-
 
 
 class LiveViewCombiner(object):

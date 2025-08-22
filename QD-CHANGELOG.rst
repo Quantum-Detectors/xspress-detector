@@ -3,6 +3,17 @@ Change log
 
 Changes made by Quantum Detectors to this repository are recorded below.
 
+
+0.5.0+qd0.3
+-----------
+
+Changed:
+
+- Changed the number of processes used in list mode and MCA mode to be the same
+  for support with X3X2 systems.
+- Some tidy up of unused imports
+
+
 0.5.0+qd0.2
 -----------
 

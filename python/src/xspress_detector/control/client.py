@@ -7,7 +7,7 @@ import asyncio
 from odin_data.control.ipc_message import IpcMessage
 from zmq.eventloop.zmqstream import ZMQStream
 from zmq.utils.monitor import parse_monitor_message
-from zmq.utils.strtypes import unicode, cast_bytes, cast_unicode
+from zmq.utils.strtypes import cast_bytes, cast_unicode
 
 
 DEFAULT_TIMEOUT = 5
