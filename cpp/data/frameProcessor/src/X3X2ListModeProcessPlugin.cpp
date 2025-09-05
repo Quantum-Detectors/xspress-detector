@@ -119,7 +119,8 @@ X3X2ListModeProcessPlugin::X3X2ListModeProcessPlugin() :
   num_channels_(0),
   channel_offset_(0),
   num_time_frames_(0),
-  num_completed_channels_(0)
+  num_completed_channels_(0),
+  acquisition_complete_(false)
 {
   // Setup logging for the class
   logger_ = Logger::getLogger("FP.X3X2ListModeProcessPlugin");
@@ -220,6 +221,7 @@ void X3X2ListModeProcessPlugin::reset_acquisition()
   }
 
   num_completed_channels_ = 0;
+  acquisition_complete_ = false;
 }
 
 void X3X2ListModeProcessPlugin::flush_close_acquisition()
@@ -336,7 +338,7 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
         ttl_a = value & 0x2;
         ttl_b = value & 0x4;
         dummy_event = value & 0x8;
-        time_frame = (time_frame & 0xFFFFFFFFFFFFFF00) | (value_64 >> 4);
+        time_frame = (time_frame & 0xFFFFFFFFFFFFFF00) | ((value_64 &0xFF0) >> 4);
         break;
       case 5:
         time_frame = (time_frame & 0xFFFFFFFFFFF000FF) | (value_64 << 8);
@@ -355,9 +357,10 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
         channel = (value >> 8) + channel_offset_;
         // Check we have the right channel (and ignore markers)
         if (memory_ptrs_.find(channel) == memory_ptrs_.end()) {
+          // Ignore entire packet
           return;
         }
-        time_frame = (time_frame & 0x00FFFFFFFFFFFFFF) | (value_64 << 56);
+        time_frame = (time_frame & 0x00FFFFFFFFFFFFFF) | ((value_64 & 0xFF) << 56);
         break;
       case 10:
         time_stamp = (time_stamp & 0xFFFFFFFFF000) | value_64;
@@ -377,34 +380,41 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
       case 14:
         // Reset event width
         num_resets++;
-        if (end_of_frame)
-        {
-          LOG4CXX_INFO(logger_, "Channel " << channel << " got end of frame for frame " << time_frame <<  " need: " << num_time_frames_);
-          if (time_frame + 1 == num_time_frames_)
-          {
-            LOG4CXX_INFO(logger_, "Acquisition of " << num_time_frames_ << " frames complete for channel " << channel);
-            num_completed_channels_++;
-          }
-        }
-        break;
       case 0:
         // Event height
         event_height = value;
-
-        // TODO: account for dummy events
 
         // TODO: remove when tested
         //LOG4CXX_INFO(logger_, "Got values: " << time_frame << ", " << time_stamp << ", " << event_height << " for first event ");
         //return
 
         // Add event
-        boost::shared_ptr <Frame> list_frame = (memory_ptrs_[channel])->add_event(time_stamp);
-        if (list_frame){
-          // LOG4CXX_DEBUG_LEVEL(1, logger_, "Completed frame for channel " << channel << ", pushing");
-          // There is a full frame available for pushing
-          this->push(list_frame);
+        if (dummy_event == 0) {
+          boost::shared_ptr <Frame> list_frame = (memory_ptrs_[channel])->add_event(time_stamp);
+
+          // Memory block frame completed
+          if (list_frame){
+            // LOG4CXX_DEBUG_LEVEL(1, logger_, "Completed frame for channel " << channel << ", pushing");
+            // There is a full frame available for pushing
+            this->push(list_frame);
+          }
         }
-        if (end_of_frame)
+
+        // xspress3m_active_readout only counts events when not end of frame so we copy this logic here
+        if (!end_of_frame)
+        {
+          if (dummy_event == 0) {
+            boost::shared_ptr <Frame> list_frame = (memory_ptrs_[channel])->add_event(time_stamp);
+
+            // Memory block frame completed
+            if (list_frame){
+              // LOG4CXX_DEBUG_LEVEL(1, logger_, "Completed frame for channel " << channel << ", pushing");
+              // There is a full frame available for pushing
+              this->push(list_frame);
+            }
+          }
+        }
+        else
         {
           LOG4CXX_INFO(logger_, "Channel " << channel << " got end of frame for frame " << time_frame);
           if (time_frame + 1 == num_time_frames_)
@@ -413,15 +423,18 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
             num_completed_channels_++;
           }
         }
+
+        // This counts resets along with normal events because no break for case 14.
         num_events++;
         break;
     }
   }
 
-  if (num_completed_channels_ == num_channels_)
+  if (num_completed_channels_ == num_channels_ && acquisition_complete_ == false)
   {
     LOG4CXX_INFO(logger_, "Acquisition of " << num_time_frames_ << " frames completed for all channels");
     this->flush_close_acquisition();
+    acquisition_complete_ = true;
   }
 
   // TODO: remove after testing

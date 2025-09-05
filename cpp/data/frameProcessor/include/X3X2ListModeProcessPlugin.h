@@ -82,6 +82,8 @@ namespace FrameProcessor
 
     uint32_t num_time_frames_;
     uint32_t num_completed_channels_;
+    std::vector<bool> completed_channels;
+    bool acquisition_complete_;
 
     std::map<uint32_t, boost::shared_ptr<X3X2ListModeMemoryBlock> > memory_ptrs_;
     std::map<uint32_t, std::vector<uint32_t> > packet_headers_;
