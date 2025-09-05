@@ -26,7 +26,7 @@ namespace FrameProcessor
     void reallocate();
     void reset();
     void reset_frame_count();
-    boost::shared_ptr <Frame> add_event(uint64_t time_frame, uint64_t time_stamp, uint64_t event_height);
+    boost::shared_ptr <Frame> add_event(uint64_t time_stamp);
     boost::shared_ptr <Frame> to_frame();
     boost::shared_ptr <Frame> flush();
 

@@ -62,7 +62,7 @@ void X3X2ListModeMemoryBlock::reset_frame_count()
   frame_count_ = 0;
 }
 
-boost::shared_ptr <Frame> X3X2ListModeMemoryBlock::add_event(uint64_t time_frame, uint64_t time_stamp, uint64_t event_height)
+boost::shared_ptr <Frame> X3X2ListModeMemoryBlock::add_event(uint64_t time_stamp)
 {
   boost::shared_ptr <Frame> frame;
 
@@ -71,12 +71,9 @@ boost::shared_ptr <Frame> X3X2ListModeMemoryBlock::add_event(uint64_t time_frame
   dest += filled_size_;
 
   // Add the event
-  // *(reinterpret_cast<uint64_t>(dest)) = event_height;
-  *((uint64_t *)dest) = time_frame;
-  *((uint64_t *)(dest) + 1) = time_stamp;
-  *((uint64_t *)(dest) + 2) = event_height;
+  *((uint64_t *)dest) = time_stamp;
 
-  filled_size_ += 3*sizeof(uint64_t);
+  filled_size_ += sizeof(uint64_t);
 
   // Final check, if we have a full buffer then send it out
   if (filled_size_ == num_bytes_){
@@ -257,7 +254,7 @@ void X3X2ListModeProcessPlugin::setup_memory_allocation()
   std::vector<uint32_t>::iterator iter;
   for (iter = channels_.begin(); iter != channels_.end(); ++iter){
     std::stringstream ss;
-    ss << "raw_" << *iter;
+    ss << "ch" << *iter << "_time_stamp";
     boost::shared_ptr<X3X2ListModeMemoryBlock> ptr = boost::shared_ptr<X3X2ListModeMemoryBlock>(new X3X2ListModeMemoryBlock(ss.str()));
     ptr->set_size(frame_size_bytes_);
     memory_ptrs_[*iter] = ptr;
@@ -401,7 +398,7 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
         //return
 
         // Add event
-        boost::shared_ptr <Frame> list_frame = (memory_ptrs_[channel])->add_event(time_frame, time_stamp, event_height);
+        boost::shared_ptr <Frame> list_frame = (memory_ptrs_[channel])->add_event(time_stamp);
         if (list_frame){
           // LOG4CXX_DEBUG_LEVEL(1, logger_, "Completed frame for channel " << channel << ", pushing");
           // There is a full frame available for pushing
