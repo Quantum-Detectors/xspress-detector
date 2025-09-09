@@ -15,30 +15,45 @@ using namespace log4cxx::helpers;
 namespace FrameProcessor
 {
 
+  /**
+   * Generic class for managing a block of memory containing a single field
+   * of list mode data.
+   */
   class X3X2ListModeMemoryBlock
   {
   public:
-    X3X2ListModeMemoryBlock(const std::string& name);
+    X3X2ListModeMemoryBlock(const std::string& name, uint32_t num_bytes_per_event);
     virtual ~X3X2ListModeMemoryBlock();
     void set_size(uint32_t bytes);
     void reallocate();
     void reset();
     void reset_frame_count();
-    boost::shared_ptr <Frame> add_event(uint64_t time_stamp);
     boost::shared_ptr <Frame> to_frame();
     boost::shared_ptr <Frame> flush();
 
-  private:
+  protected:
     void *ptr_;
     std::string name_;
     uint32_t num_bytes_;
-    uint32_t filled_size_;  // Filled size in bytes
+    uint32_t filled_size_;
     uint32_t frame_count_;
 
-    const uint32_t num_bytes_per_event_ = 8;
+    uint32_t num_bytes_per_event_;
 
     /** Pointer to logger */
     LoggerPtr logger_;
+  };
+
+  /**
+   * Specific class for managing timestamp memory blocks
+   */
+  class X3X2ListModeTimestampMemoryBlock :  public X3X2ListModeMemoryBlock
+  {
+  public:
+    X3X2ListModeTimestampMemoryBlock(const std::string& name);
+    virtual ~X3X2ListModeTimestampMemoryBlock();
+
+    boost::shared_ptr <Frame> add_timestamp(uint64_t timestamp);
   };
 
 }

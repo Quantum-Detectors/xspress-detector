@@ -115,7 +115,7 @@ void X3X2ListModeProcessPlugin::set_channels(std::vector<uint32_t> channels)
 void X3X2ListModeProcessPlugin::reset_acquisition()
 {
   LOG4CXX_INFO(logger_, "Resetting acquisition");
-  std::map<uint32_t, boost::shared_ptr<X3X2ListModeMemoryBlock> >::iterator iter;
+  std::map<uint32_t, boost::shared_ptr<X3X2ListModeTimestampMemoryBlock> >::iterator iter;
   for (iter = memory_ptrs_.begin(); iter != memory_ptrs_.end(); ++iter){
     iter->second->reset_frame_count();
     iter->second->reset();
@@ -128,7 +128,7 @@ void X3X2ListModeProcessPlugin::reset_acquisition()
 void X3X2ListModeProcessPlugin::flush_close_acquisition()
 {
   LOG4CXX_INFO(logger_, "Flushing and closing acquisition");
-  std::map<uint32_t, boost::shared_ptr<X3X2ListModeMemoryBlock> >::iterator iter;
+  std::map<uint32_t, boost::shared_ptr<X3X2ListModeTimestampMemoryBlock> >::iterator iter;
   for (iter = memory_ptrs_.begin(); iter != memory_ptrs_.end(); ++iter){
     LOG4CXX_DEBUG_LEVEL(0, logger_, "Flushing frame for channel " << iter->first);
     boost::shared_ptr <Frame> list_frame = iter->second->to_frame();
@@ -158,7 +158,10 @@ void X3X2ListModeProcessPlugin::setup_memory_allocation()
   for (iter = channels_.begin(); iter != channels_.end(); ++iter){
     std::stringstream ss;
     ss << "ch" << *iter << "_time_stamp";
-    boost::shared_ptr<X3X2ListModeMemoryBlock> ptr = boost::shared_ptr<X3X2ListModeMemoryBlock>(new X3X2ListModeMemoryBlock(ss.str()));
+    boost::shared_ptr<X3X2ListModeTimestampMemoryBlock> ptr =
+      boost::shared_ptr<X3X2ListModeTimestampMemoryBlock>(
+        new X3X2ListModeTimestampMemoryBlock(ss.str())
+      );
     ptr->set_size(frame_size_bytes_);
     memory_ptrs_[*iter] = ptr;
     // Setup the storage vectors for the packet header information
@@ -289,23 +292,11 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
         //LOG4CXX_INFO(logger_, "Got values: " << time_frame << ", " << time_stamp << ", " << event_height << " for first event ");
         //return
 
-        // Add event
-        if (dummy_event == 0) {
-          boost::shared_ptr <Frame> list_frame = (memory_ptrs_[channel])->add_event(time_stamp);
-
-          // Memory block frame completed
-          if (list_frame){
-            // LOG4CXX_DEBUG_LEVEL(1, logger_, "Completed frame for channel " << channel << ", pushing");
-            // There is a full frame available for pushing
-            this->push(list_frame);
-          }
-        }
-
         // xspress3m_active_readout only counts events when not end of frame so we copy this logic here
         if (!end_of_frame)
         {
           if (dummy_event == 0) {
-            boost::shared_ptr <Frame> list_frame = (memory_ptrs_[channel])->add_event(time_stamp);
+            boost::shared_ptr <Frame> list_frame = (memory_ptrs_[channel])->add_timestamp(time_stamp);
 
             // Memory block frame completed
             if (list_frame){

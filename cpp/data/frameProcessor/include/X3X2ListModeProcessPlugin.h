@@ -59,7 +59,7 @@ namespace FrameProcessor
     uint32_t num_completed_channels_;
     bool acquisition_complete_;
 
-    std::map<uint32_t, boost::shared_ptr<X3X2ListModeMemoryBlock> > memory_ptrs_;
+    std::map<uint32_t, boost::shared_ptr<X3X2ListModeTimestampMemoryBlock> > memory_ptrs_;
     std::map<uint32_t, std::vector<uint32_t> > packet_headers_;
 
     static const std::string CONFIG_CHANNELS;

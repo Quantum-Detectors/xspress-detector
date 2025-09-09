@@ -8,11 +8,12 @@
 
 namespace FrameProcessor {
 
-X3X2ListModeMemoryBlock::X3X2ListModeMemoryBlock(const std::string& name) :
+X3X2ListModeMemoryBlock::X3X2ListModeMemoryBlock(const std::string& name, uint32_t num_bytes_per_event) :
   ptr_(0),
   num_bytes_(0),
   filled_size_(0),
-  frame_count_(0)
+  frame_count_(0),
+  num_bytes_per_event_(num_bytes_per_event)
 {
   // Setup logging for the class
   logger_ = Logger::getLogger("FP.X3X2ListModeProcessPlugin");
@@ -56,27 +57,6 @@ void X3X2ListModeMemoryBlock::reset_frame_count()
   frame_count_ = 0;
 }
 
-boost::shared_ptr <Frame> X3X2ListModeMemoryBlock::add_event(uint64_t time_stamp)
-{
-  boost::shared_ptr <Frame> frame;
-
-  // Calculate the current end of data pointer location
-  char *dest = (char *)ptr_;
-  dest += filled_size_;
-
-  // Add the event
-  *((uint64_t *)dest) = time_stamp;
-
-  filled_size_ += sizeof(uint64_t);
-
-  // Final check, if we have a full buffer then send it out
-  if (filled_size_ == num_bytes_){
-    frame = this->to_frame();
-  }
-
-  return frame;
-}
-
 boost::shared_ptr <Frame> X3X2ListModeMemoryBlock::to_frame()
 {
   boost::shared_ptr <Frame> frame;
@@ -105,6 +85,37 @@ boost::shared_ptr <Frame> X3X2ListModeMemoryBlock::flush()
   FrameMetaData list_metadata(frame_count_, name_, raw_64bit, "", dims);
   frame = boost::shared_ptr<Frame>(new DataBlockFrame(list_metadata, filled_size_));
   memcpy(frame->get_data_ptr(), ptr_, filled_size_);
+
+  return frame;
+}
+
+X3X2ListModeTimestampMemoryBlock::X3X2ListModeTimestampMemoryBlock(const std::string& name) :
+    X3X2ListModeMemoryBlock(name, 8)
+{
+  LOG4CXX_INFO(logger_, "Created X3X2ListModeTimestampMemoryBlock");
+}
+
+X3X2ListModeTimestampMemoryBlock::~X3X2ListModeTimestampMemoryBlock()
+{
+}
+
+boost::shared_ptr <Frame> X3X2ListModeTimestampMemoryBlock::add_timestamp(uint64_t timestamp)
+{
+  boost::shared_ptr <Frame> frame;
+
+  // Calculate the current end of data pointer location
+  char *dest = (char *)ptr_;
+  dest += filled_size_;
+
+  // Add the event
+  *((uint64_t *)dest) = timestamp;
+
+  filled_size_ += sizeof(uint64_t);
+
+  // Final check, if we have a full buffer then send it out
+  if (filled_size_ == num_bytes_){
+    frame = this->to_frame();
+  }
 
   return frame;
 }
