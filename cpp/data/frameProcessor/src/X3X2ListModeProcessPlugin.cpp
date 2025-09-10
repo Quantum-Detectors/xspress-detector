@@ -292,6 +292,9 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
 {
   // LOG4CXX_INFO(logger_, "Processing frame " << frame->get_frame_number() << " of size " << frame->get_data_size() << " at " << frame->get_data_ptr());
 
+  // Packet arrived after we got the EOF for the desired time frame
+  if (acquisition_complete_) return;
+
   uint16_t* frame_data = static_cast<uint16_t *>(frame->get_data_ptr());
 
   // TODO: remove after testing
@@ -433,6 +436,7 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
               acquisition_complete_ = true;
               LOG4CXX_INFO(logger_, "Acquisition of " << num_time_frames_ << " frames completed for all channels");
               LOG4CXX_INFO(logger_, "Total events across all channels: " << num_events_);
+              return;
             }
           }
         }

@@ -68,7 +68,7 @@ void X3X2ListModeMemoryBlock::reset_frame_count()
 
 boost::shared_ptr <Frame> X3X2ListModeMemoryBlock::to_frame()
 {
-  LOG4CXX_INFO(logger_, "[" << name_ << "]" << "Flushing frame " << frame_count_ << " of " << num_bytes_ << " bytes");
+  LOG4CXX_INFO(logger_, "[" << name_ << "]" << "Getting complete frame " << frame_count_ << " of " << num_bytes_ << " bytes");
   boost::shared_ptr <Frame> frame;
 
   // Create the frame around the current (partial) block
