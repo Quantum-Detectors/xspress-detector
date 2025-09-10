@@ -45,7 +45,18 @@ namespace FrameProcessor
     void set_channels(std::vector<uint32_t> channels);
     void set_frame_size(uint32_t num_bytes);
     void setup_memory_allocation();
-        
+
+    // Memory blocks
+    void clear_timeframe_memory_blocks();
+    void clear_timestamp_memory_blocks();
+    void clear_event_height_memory_blocks();
+
+    void flush_timeframe_memory_blocks();
+    void flush_timestamp_memory_blocks();
+    void flush_event_height_memory_blocks();
+
+    void setup_channel_memory_blocks(uint32_t channel);
+
     // Plugin interface
     void status(OdinData::IpcMessage& status);
     void process_frame(boost::shared_ptr <Frame> frame);
@@ -56,10 +67,16 @@ namespace FrameProcessor
     uint32_t channel_offset_;
 
     uint32_t num_time_frames_;
-    uint32_t num_completed_channels_;
+
+    std::map<uint32_t, bool> completed_channels_;
     bool acquisition_complete_;
 
-    std::map<uint32_t, boost::shared_ptr<X3X2ListModeTimestampMemoryBlock> > memory_ptrs_;
+    uint64_t num_events_;
+
+    std::map<uint32_t, boost::shared_ptr<X3X2ListModeTimeframeMemoryBlock> > timeframe_memory_ptrs_;
+    std::map<uint32_t, boost::shared_ptr<X3X2ListModeTimestampMemoryBlock> > timestamp_memory_ptrs_;
+    std::map<uint32_t, boost::shared_ptr<X3X2ListModeEventHeightMemoryBlock> > event_height_memory_ptrs_;
+
     std::map<uint32_t, std::vector<uint32_t> > packet_headers_;
 
     static const std::string CONFIG_CHANNELS;

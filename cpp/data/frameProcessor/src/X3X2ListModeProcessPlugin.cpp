@@ -20,7 +20,8 @@ X3X2ListModeProcessPlugin::X3X2ListModeProcessPlugin() :
   num_channels_(0),
   channel_offset_(0),
   num_time_frames_(0),
-  num_completed_channels_(0),
+  num_events_(0),
+  completed_channels_(),
   acquisition_complete_(false)
 {
   // Setup logging for the class
@@ -104,38 +105,105 @@ void X3X2ListModeProcessPlugin::set_channels(std::vector<uint32_t> channels)
 {
   channels_ = channels;
   num_channels_ = channels.size();
+
+  // Used to track which channels are complete during acquisition
+  completed_channels_.clear();
+  for (auto const& chan : channels_) completed_channels_[chan] = false;
+
   // TCP frames only report as channels 0 and 1 - we need to store
   // the offset so we can report the correct system channels to the file
   // writer
   channel_offset_ = channels_[0];
+
   // We must reallocate memory blocks
   setup_memory_allocation();
+}
+
+void X3X2ListModeProcessPlugin::clear_timeframe_memory_blocks()
+{
+  std::map<uint32_t, boost::shared_ptr<X3X2ListModeTimeframeMemoryBlock> >::iterator iter;
+  for (iter = timeframe_memory_ptrs_.begin(); iter != timeframe_memory_ptrs_.end(); ++iter){
+    iter->second->reset_frame_count();
+    iter->second->reset();
+  }
+}
+
+void X3X2ListModeProcessPlugin::clear_timestamp_memory_blocks()
+{
+  std::map<uint32_t, boost::shared_ptr<X3X2ListModeTimestampMemoryBlock> >::iterator iter;
+  for (iter = timestamp_memory_ptrs_.begin(); iter != timestamp_memory_ptrs_.end(); ++iter){
+    iter->second->reset_frame_count();
+    iter->second->reset();
+  }
+}
+
+void X3X2ListModeProcessPlugin::clear_event_height_memory_blocks()
+{
+  std::map<uint32_t, boost::shared_ptr<X3X2ListModeEventHeightMemoryBlock> >::iterator iter;
+  for (iter = event_height_memory_ptrs_.begin(); iter != event_height_memory_ptrs_.end(); ++iter){
+    iter->second->reset_frame_count();
+    iter->second->reset();
+  }
 }
 
 void X3X2ListModeProcessPlugin::reset_acquisition()
 {
   LOG4CXX_INFO(logger_, "Resetting acquisition");
-  std::map<uint32_t, boost::shared_ptr<X3X2ListModeTimestampMemoryBlock> >::iterator iter;
-  for (iter = memory_ptrs_.begin(); iter != memory_ptrs_.end(); ++iter){
-    iter->second->reset_frame_count();
-    iter->second->reset();
-  }
 
-  num_completed_channels_ = 0;
+  clear_timeframe_memory_blocks();
+  clear_timestamp_memory_blocks();
+  clear_event_height_memory_blocks();
+
+  num_events_ = 0;
   acquisition_complete_ = false;
+  completed_channels_.clear();
+  for (auto const& chan : channels_) completed_channels_[chan] = false;
 }
 
-void X3X2ListModeProcessPlugin::flush_close_acquisition()
+void X3X2ListModeProcessPlugin::flush_timeframe_memory_blocks()
 {
-  LOG4CXX_INFO(logger_, "Flushing and closing acquisition");
-  std::map<uint32_t, boost::shared_ptr<X3X2ListModeTimestampMemoryBlock> >::iterator iter;
-  for (iter = memory_ptrs_.begin(); iter != memory_ptrs_.end(); ++iter){
-    LOG4CXX_DEBUG_LEVEL(0, logger_, "Flushing frame for channel " << iter->first);
+  std::map<uint32_t, boost::shared_ptr<X3X2ListModeTimeframeMemoryBlock> >::iterator iter;
+  for (iter = timeframe_memory_ptrs_.begin(); iter != timeframe_memory_ptrs_.end(); ++iter){
+    LOG4CXX_DEBUG_LEVEL(0, logger_, "Flushing timeframe for channel " << iter->first);
     boost::shared_ptr <Frame> list_frame = iter->second->to_frame();
     if (list_frame){
       this->push(list_frame);
     }
   }
+}
+
+void X3X2ListModeProcessPlugin::flush_timestamp_memory_blocks()
+{
+  std::map<uint32_t, boost::shared_ptr<X3X2ListModeTimestampMemoryBlock> >::iterator iter;
+  for (iter = timestamp_memory_ptrs_.begin(); iter != timestamp_memory_ptrs_.end(); ++iter){
+    LOG4CXX_DEBUG_LEVEL(0, logger_, "Flushing timestamp for channel " << iter->first);
+    boost::shared_ptr <Frame> list_frame = iter->second->to_frame();
+    if (list_frame){
+      this->push(list_frame);
+    }
+  }
+}
+
+void X3X2ListModeProcessPlugin::flush_event_height_memory_blocks()
+{
+  std::map<uint32_t, boost::shared_ptr<X3X2ListModeEventHeightMemoryBlock> >::iterator iter;
+  for (iter = event_height_memory_ptrs_.begin(); iter != event_height_memory_ptrs_.end(); ++iter){
+    LOG4CXX_DEBUG_LEVEL(0, logger_, "Flushing event height for channel " << iter->first);
+    boost::shared_ptr <Frame> list_frame = iter->second->to_frame();
+    if (list_frame){
+      this->push(list_frame);
+    }
+  }
+}
+
+void X3X2ListModeProcessPlugin::flush_close_acquisition()
+{
+  LOG4CXX_INFO(logger_, "Flushing and closing acquisition");
+
+  flush_timeframe_memory_blocks();
+  flush_timestamp_memory_blocks();
+  flush_event_height_memory_blocks();
+
   this->notify_end_of_acquisition();
 }
 
@@ -147,26 +215,58 @@ void X3X2ListModeProcessPlugin::set_frame_size(uint32_t num_bytes)
   setup_memory_allocation();
 }
 
+/**
+ * Set up the channel memory blocks for a single channel
+ * 
+ * A separate block is used for each event field.
+ * 
+ * \param[in] channel - Channel number
+ */
+void X3X2ListModeProcessPlugin::setup_channel_memory_blocks(uint32_t channel)
+{
+  std::string timeframe_name = "ch" + std::to_string(channel) + "_time_frame";
+  std::string timestamp_name = "ch" + std::to_string(channel) + "_time_stamp";
+  std::string event_height_name = "ch" + std::to_string(channel) + "_event_height";
+
+  // Create the memory blocks
+  boost::shared_ptr<X3X2ListModeTimeframeMemoryBlock> frame_ptr =
+    boost::shared_ptr<X3X2ListModeTimeframeMemoryBlock>(
+      new X3X2ListModeTimeframeMemoryBlock(timeframe_name)
+    );
+  frame_ptr->set_size(frame_size_bytes_);
+  timeframe_memory_ptrs_[channel] = frame_ptr;
+
+  boost::shared_ptr<X3X2ListModeTimestampMemoryBlock> stamp_ptr =
+    boost::shared_ptr<X3X2ListModeTimestampMemoryBlock>(
+      new X3X2ListModeTimestampMemoryBlock(timestamp_name)
+    );
+  stamp_ptr->set_size(frame_size_bytes_);
+  timestamp_memory_ptrs_[channel] = stamp_ptr;
+
+  boost::shared_ptr<X3X2ListModeEventHeightMemoryBlock> height_ptr =
+    boost::shared_ptr<X3X2ListModeEventHeightMemoryBlock>(
+      new X3X2ListModeEventHeightMemoryBlock(event_height_name)
+    );
+  height_ptr->set_size(frame_size_bytes_);
+  event_height_memory_ptrs_[channel] = height_ptr;
+
+  // Setup the storage vectors for the packet header information
+  std::vector<uint32_t> hdr(3, 0);
+  packet_headers_[channel] = hdr;
+}
+
 void X3X2ListModeProcessPlugin::setup_memory_allocation()
 {
-  // First clear out the memory vector emptying any blocks
-  memory_ptrs_.clear();
+  // First clear out the memory vectors emptying any blocks
+  timeframe_memory_ptrs_.clear();
+  timestamp_memory_ptrs_.clear();
+  event_height_memory_ptrs_.clear();
 
   // Allocate large enough blocks of memory to hold list mode frames
-  // Allocate one block of memory for each channel
+  // Allocate one block of memory for each event field for each channel
   std::vector<uint32_t>::iterator iter;
   for (iter = channels_.begin(); iter != channels_.end(); ++iter){
-    std::stringstream ss;
-    ss << "ch" << *iter << "_time_stamp";
-    boost::shared_ptr<X3X2ListModeTimestampMemoryBlock> ptr =
-      boost::shared_ptr<X3X2ListModeTimestampMemoryBlock>(
-        new X3X2ListModeTimestampMemoryBlock(ss.str())
-      );
-    ptr->set_size(frame_size_bytes_);
-    memory_ptrs_[*iter] = ptr;
-    // Setup the storage vectors for the packet header information
-    std::vector<uint32_t> hdr(3, 0);
-    packet_headers_[*iter] = hdr;
+    setup_channel_memory_blocks(*iter);
   }
 }
 
@@ -203,7 +303,7 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
   uint64_t time_frame = 0;
   uint64_t time_stamp = 0;
 
-  uint64_t event_height = 0;
+  uint16_t event_height = 0;
 
   bool dummy_event = 0;
   bool end_of_frame = 0;
@@ -213,7 +313,6 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
   uint16_t channel = -1;
 
   // Track number of events
-  unsigned int num_events = 0;
   unsigned int num_resets = 0;
   unsigned int num_padding = 0;
 
@@ -260,7 +359,7 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
         // Calculate actual channel in system
         channel = (value >> 8) + channel_offset_;
         // Check we have the right channel (and ignore markers)
-        if (memory_ptrs_.find(channel) == memory_ptrs_.end()) {
+        if (timestamp_memory_ptrs_.find(channel) == timestamp_memory_ptrs_.end()) {
           // Ignore entire packet
           return;
         }
@@ -296,44 +395,51 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
         if (!end_of_frame)
         {
           if (dummy_event == 0) {
-            boost::shared_ptr <Frame> list_frame = (memory_ptrs_[channel])->add_timestamp(time_stamp);
-
+            boost::shared_ptr <Frame> list_frame = (timeframe_memory_ptrs_[channel])->add_timeframe(time_frame);
             // Memory block frame completed
-            if (list_frame){
-              // LOG4CXX_DEBUG_LEVEL(1, logger_, "Completed frame for channel " << channel << ", pushing");
-              // There is a full frame available for pushing
-              this->push(list_frame);
-            }
+            if (list_frame) this->push(list_frame);
+
+            list_frame = (timestamp_memory_ptrs_[channel])->add_timestamp(time_stamp);
+            // Memory block frame completed
+            if (list_frame) this->push(list_frame);
+
+            list_frame = (event_height_memory_ptrs_[channel])->add_event_height(event_height);
+            // Memory block frame completed
+            if (list_frame) this->push(list_frame);
+
+            // Track overall number of recorded events in acquisition (including resets)
+            num_events_++;
           }
         }
-        else
+        else if (!acquisition_complete_)
         {
+          // TODO: work out why we get more events after the end of frame marker is set and see if we need to
+          // save them or ignore them (we ignore them here)
           LOG4CXX_INFO(logger_, "Channel " << channel << " got end of frame for frame " << time_frame);
           if (time_frame + 1 == num_time_frames_)
           {
             LOG4CXX_INFO(logger_, "Acquisition of " << num_time_frames_ << " frames complete for channel " << channel);
-            num_completed_channels_++;
+            completed_channels_[channel] = true;
+
+            // Check if every channel is now finished
+            uint16_t completed_channels = 0;
+            for (auto const& it : completed_channels_)
+            {
+              if (it.second) completed_channels++;
+            }
+            if (completed_channels == num_channels_)
+            {
+              this->flush_close_acquisition();
+              acquisition_complete_ = true;
+              LOG4CXX_INFO(logger_, "Acquisition of " << num_time_frames_ << " frames completed for all channels");
+              LOG4CXX_INFO(logger_, "Total events across all channels: " << num_events_);
+            }
           }
         }
 
-        // This counts resets along with normal events because no break for case 14.
-        num_events++;
         break;
     }
   }
-
-  if (num_completed_channels_ == num_channels_ && acquisition_complete_ == false)
-  {
-    LOG4CXX_INFO(logger_, "Acquisition of " << num_time_frames_ << " frames completed for all channels");
-    this->flush_close_acquisition();
-    acquisition_complete_ = true;
-  }
-
-  // TODO: remove after testing
-  //LOG4CXX_INFO(logger_, "Got ids " << ids << " for channel " << channel);
-  //LOG4CXX_INFO(logger_, "Got values " << values << " for channel " << channel);
-  //LOG4CXX_INFO(logger_, "Time frame: " << time_frame);
-  //LOG4CXX_INFO(logger_, "Events: " << num_events << ", Resets: " << num_resets << ", pad: " << num_padding);
 
 }
 

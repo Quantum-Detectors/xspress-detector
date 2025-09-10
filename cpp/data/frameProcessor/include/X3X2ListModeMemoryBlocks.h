@@ -22,7 +22,7 @@ namespace FrameProcessor
   class X3X2ListModeMemoryBlock
   {
   public:
-    X3X2ListModeMemoryBlock(const std::string& name, uint32_t num_bytes_per_event);
+    X3X2ListModeMemoryBlock(const std::string& name, DataType data_type, uint32_t num_bytes_per_event);
     virtual ~X3X2ListModeMemoryBlock();
     void set_size(uint32_t bytes);
     void reallocate();
@@ -38,10 +38,23 @@ namespace FrameProcessor
     uint32_t filled_size_;
     uint32_t frame_count_;
 
+    DataType data_type_;
     uint32_t num_bytes_per_event_;
 
     /** Pointer to logger */
     LoggerPtr logger_;
+  };
+
+  /**
+   * Specific class for managing timeframe memory blocks
+   */
+  class X3X2ListModeTimeframeMemoryBlock :  public X3X2ListModeMemoryBlock
+  {
+  public:
+    X3X2ListModeTimeframeMemoryBlock(const std::string& name);
+    virtual ~X3X2ListModeTimeframeMemoryBlock();
+
+    boost::shared_ptr <Frame> add_timeframe(uint64_t timeframe);
   };
 
   /**
@@ -54,6 +67,18 @@ namespace FrameProcessor
     virtual ~X3X2ListModeTimestampMemoryBlock();
 
     boost::shared_ptr <Frame> add_timestamp(uint64_t timestamp);
+  };
+
+  /**
+   * Specific class for managing event height memory blocks
+   */
+  class X3X2ListModeEventHeightMemoryBlock :  public X3X2ListModeMemoryBlock
+  {
+  public:
+    X3X2ListModeEventHeightMemoryBlock(const std::string& name);
+    virtual ~X3X2ListModeEventHeightMemoryBlock();
+
+    boost::shared_ptr <Frame> add_event_height(uint16_t event_height);
   };
 
 }

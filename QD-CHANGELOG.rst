@@ -3,6 +3,19 @@ Change log
 
 Changes made by Quantum Detectors to this repository are recorded below.
 
+Unreleased
+----------
+
+Changed:
+
+- Separated out X3X2 list mode datasets to 1 dataset per event field. The memory
+  block has been split up into a base class and derived classes to manage the
+  different datatypes.
+- Changed how the X3X2 list mode plugin tracks acquisition completion
+  as we receive multiple events with the end of frame marker set. Now
+  use a map to track individual channel completion. The additional
+  events are currently ignored.
+
 
 0.5.0+qd0.3
 -----------
