@@ -443,22 +443,24 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
         if (!end_of_frame)
         {
           if (dummy_event == 0) {
-            boost::shared_ptr <Frame> tf_frame = (timeframe_memory_ptrs_[channel])->add_timeframe(time_frame);
-            // Memory block frame completed
-            if (tf_frame) this->push(tf_frame);
+            boost::shared_ptr <Frame> frame;
 
-            boost::shared_ptr <Frame> ts_frame = (timestamp_memory_ptrs_[channel])->add_timestamp(time_stamp);
+            frame = (timeframe_memory_ptrs_[channel])->add_timeframe(time_frame);
             // Memory block frame completed
-            if (ts_frame) this->push(ts_frame);
+            if (frame) this->push(frame);
 
-            boost::shared_ptr <Frame> eh_frame = (event_height_memory_ptrs_[channel])->add_event_height(event_height);
+            frame = (timestamp_memory_ptrs_[channel])->add_timestamp(time_stamp);
             // Memory block frame completed
-            if (eh_frame) this->push(eh_frame);
+            if (frame) this->push(frame);
+
+            frame = (event_height_memory_ptrs_[channel])->add_event_height(event_height);
+            // Memory block frame completed
+            if (frame) this->push(frame);
 
             reset_flag = (id == 14) ? true : false;
-            boost::shared_ptr <Frame> rf_frame = (reset_flag_memory_ptrs_[channel])->add_reset_flag(reset_flag);
+            frame = (reset_flag_memory_ptrs_[channel])->add_reset_flag(reset_flag);
             // Memory block frame completed
-            if (rf_frame) this->push(rf_frame);
+            if (frame) this->push(frame);
 
             // Track overall number of recorded events in acquisition (including resets)
             num_events_[channel]++;
