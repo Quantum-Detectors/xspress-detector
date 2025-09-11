@@ -172,7 +172,7 @@ void X3X2ListModeProcessPlugin::flush_timeframe_memory_blocks()
   std::map<uint32_t, boost::shared_ptr<X3X2ListModeTimeframeMemoryBlock> >::iterator iter;
   for (iter = timeframe_memory_ptrs_.begin(); iter != timeframe_memory_ptrs_.end(); ++iter){
     LOG4CXX_DEBUG_LEVEL(0, logger_, "Flushing timeframe for channel " << iter->first);
-    boost::shared_ptr <Frame> list_frame = iter->second->flush();
+    boost::shared_ptr <Frame> list_frame = iter->second->to_frame();
     if (list_frame){
       this->push(list_frame);
     }
@@ -184,7 +184,7 @@ void X3X2ListModeProcessPlugin::flush_timestamp_memory_blocks()
   std::map<uint32_t, boost::shared_ptr<X3X2ListModeTimestampMemoryBlock> >::iterator iter;
   for (iter = timestamp_memory_ptrs_.begin(); iter != timestamp_memory_ptrs_.end(); ++iter){
     LOG4CXX_DEBUG_LEVEL(0, logger_, "Flushing timestamp for channel " << iter->first);
-    boost::shared_ptr <Frame> list_frame = iter->second->flush();
+    boost::shared_ptr <Frame> list_frame = iter->second->to_frame();
     if (list_frame){
       this->push(list_frame);
     }
@@ -196,7 +196,7 @@ void X3X2ListModeProcessPlugin::flush_event_height_memory_blocks()
   std::map<uint32_t, boost::shared_ptr<X3X2ListModeEventHeightMemoryBlock> >::iterator iter;
   for (iter = event_height_memory_ptrs_.begin(); iter != event_height_memory_ptrs_.end(); ++iter){
     LOG4CXX_DEBUG_LEVEL(0, logger_, "Flushing event height for channel " << iter->first);
-    boost::shared_ptr <Frame> list_frame = iter->second->flush();
+    boost::shared_ptr <Frame> list_frame = iter->second->to_frame();
     if (list_frame){
       this->push(list_frame);
     }
@@ -208,7 +208,7 @@ void X3X2ListModeProcessPlugin::flush_reset_flag_memory_blocks()
   std::map<uint32_t, boost::shared_ptr<X3X2ListModeResetFlagMemoryBlock> >::iterator iter;
   for (iter = reset_flag_memory_ptrs_.begin(); iter != reset_flag_memory_ptrs_.end(); ++iter){
     LOG4CXX_DEBUG_LEVEL(0, logger_, "Flushing event height for channel " << iter->first);
-    boost::shared_ptr <Frame> list_frame = iter->second->flush();
+    boost::shared_ptr <Frame> list_frame = iter->second->to_frame();
     if (list_frame){
       this->push(list_frame);
     }
@@ -340,8 +340,6 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
 
   uint16_t* frame_data = static_cast<uint16_t *>(frame->get_data_ptr());
 
-  boost::shared_ptr <Frame> list_frame;
-
   // TODO: remove after testing
   std::string ids("");
   std::string values("");
@@ -445,22 +443,22 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
         if (!end_of_frame)
         {
           if (dummy_event == 0) {
-            list_frame = (timeframe_memory_ptrs_[channel])->add_timeframe(time_frame);
+            boost::shared_ptr <Frame> tf_frame = (timeframe_memory_ptrs_[channel])->add_timeframe(time_frame);
             // Memory block frame completed
-            if (list_frame) this->push(list_frame);
+            if (tf_frame) this->push(tf_frame);
 
-            list_frame = (timestamp_memory_ptrs_[channel])->add_timestamp(time_stamp);
+            boost::shared_ptr <Frame> ts_frame = (timestamp_memory_ptrs_[channel])->add_timestamp(time_stamp);
             // Memory block frame completed
-            if (list_frame) this->push(list_frame);
+            if (ts_frame) this->push(ts_frame);
 
-            list_frame = (event_height_memory_ptrs_[channel])->add_event_height(event_height);
+            boost::shared_ptr <Frame> eh_frame = (event_height_memory_ptrs_[channel])->add_event_height(event_height);
             // Memory block frame completed
-            if (list_frame) this->push(list_frame);
+            if (eh_frame) this->push(eh_frame);
 
             reset_flag = (id == 14) ? true : false;
-            list_frame = (reset_flag_memory_ptrs_[channel])->add_reset_flag(reset_flag);
+            boost::shared_ptr <Frame> rf_frame = (reset_flag_memory_ptrs_[channel])->add_reset_flag(reset_flag);
             // Memory block frame completed
-            if (list_frame) this->push(list_frame);
+            if (rf_frame) this->push(rf_frame);
 
             // Track overall number of recorded events in acquisition (including resets)
             num_events_[channel]++;
