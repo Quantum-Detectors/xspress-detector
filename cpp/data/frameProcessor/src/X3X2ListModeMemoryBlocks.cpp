@@ -47,7 +47,7 @@ void X3X2ListModeMemoryBlock::set_size(uint32_t bytes)
 
 void X3X2ListModeMemoryBlock::reallocate()
 {
-  LOG4CXX_INFO(logger_, "[" << name_ << "]" << "Reallocating X3X2ListModeMemoryBlock to [" << num_bytes_ << "] bytes");
+  LOG4CXX_INFO(logger_, "[" << name_ << "]" << " Reallocating X3X2ListModeMemoryBlock to [" << num_bytes_ << "] bytes");
   if (ptr_){
     free(ptr_);
   }
@@ -68,14 +68,13 @@ void X3X2ListModeMemoryBlock::reset_frame_count()
 
 boost::shared_ptr <Frame> X3X2ListModeMemoryBlock::to_frame()
 {
-  LOG4CXX_INFO(logger_, "[" << name_ << "]" << "Getting complete frame " << frame_count_ << " of " << num_bytes_ << " bytes");
+  LOG4CXX_INFO(logger_, "[" << name_ << "]" << " Getting complete frame " << frame_count_ << " of " << num_bytes_ << " bytes");
   boost::shared_ptr <Frame> frame;
 
-  // Create the frame around the current (partial) block
+  // Create the frame around the complete block
   dimensions_t dims;
   FrameMetaData list_metadata(frame_count_, name_, data_type_, "", dims);
-  frame = boost::shared_ptr<Frame>(new DataBlockFrame(list_metadata, num_bytes_));
-  memcpy(frame->get_data_ptr(), ptr_, num_bytes_);
+  frame = boost::shared_ptr<Frame>(new DataBlockFrame(list_metadata, ptr_, num_bytes_));
 
   // Reset the block
   reset();
@@ -94,8 +93,11 @@ boost::shared_ptr <Frame> X3X2ListModeMemoryBlock::flush()
   // Create the frame around the current (partial) block
   dimensions_t dims;
   FrameMetaData list_metadata(frame_count_, name_, data_type_, "", dims);
-  frame = boost::shared_ptr<Frame>(new DataBlockFrame(list_metadata, filled_size_));
-  memcpy(frame->get_data_ptr(), ptr_, filled_size_);
+  frame = boost::shared_ptr<Frame>(new DataBlockFrame(list_metadata, ptr_, filled_size_));
+
+  // We don't reset here as this is called at the end of an acquisition by
+  // flush_close_acquisition. Resetting should reset the memory block before
+  // the next one starts
 
   return frame;
 }

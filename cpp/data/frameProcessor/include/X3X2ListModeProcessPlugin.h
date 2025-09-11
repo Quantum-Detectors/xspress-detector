@@ -59,6 +59,8 @@ namespace FrameProcessor
 
     void setup_channel_memory_blocks(uint32_t channel);
 
+    void reset_channel_statistics();
+
     // Plugin interface
     void status(OdinData::IpcMessage& status);
     void process_frame(boost::shared_ptr <Frame> frame);
@@ -70,9 +72,11 @@ namespace FrameProcessor
 
     // Acquisition properties
     uint32_t num_time_frames_;
-    std::map<uint32_t, bool> completed_channels_;
     bool acquisition_complete_;
-    uint64_t num_events_;
+
+    // Tracking per channel
+    std::map<uint32_t, bool> completed_channels_;
+    std::map<uint32_t, uint64_t> num_events_;
 
     // Memory blocks for event fields
     std::map<uint32_t, boost::shared_ptr<X3X2ListModeTimeframeMemoryBlock> > timeframe_memory_ptrs_;
