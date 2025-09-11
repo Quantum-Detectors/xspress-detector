@@ -174,7 +174,7 @@ boost::shared_ptr <Frame> X3X2ListModeTimestampMemoryBlock::add_timestamp(uint64
 
 
 // ============================================================================
-// Timeframe memory block
+// Event height memory block
 // ============================================================================
 
 X3X2ListModeEventHeightMemoryBlock::X3X2ListModeEventHeightMemoryBlock(const std::string& name) :
@@ -199,6 +199,41 @@ boost::shared_ptr <Frame> X3X2ListModeEventHeightMemoryBlock::add_event_height(u
   *((uint16_t *)dest) = event_height;
 
   filled_size_ += sizeof(uint16_t);
+
+  // Final check, if we have a full buffer then send it out
+  if (filled_size_ == num_bytes_){
+    frame = this->to_frame();
+  }
+
+  return frame;
+}
+
+// ============================================================================
+// Reset flag memory block
+// ============================================================================
+
+X3X2ListModeResetFlagMemoryBlock::X3X2ListModeResetFlagMemoryBlock(const std::string& name) :
+    X3X2ListModeMemoryBlock(name, raw_8bit, 1)
+{
+  LOG4CXX_INFO(logger_, "[" << name_ << "]" << "Created X3X2ListModeResetFlagMemoryBlock");
+}
+
+X3X2ListModeResetFlagMemoryBlock::~X3X2ListModeResetFlagMemoryBlock()
+{
+}
+
+boost::shared_ptr <Frame> X3X2ListModeResetFlagMemoryBlock::add_reset_flag(uint8_t reset_flag)
+{
+  boost::shared_ptr <Frame> frame;
+
+  // Calculate the current end of data pointer location
+  char *dest = (char *)ptr_;
+  dest += filled_size_;
+
+  // Add the event
+  *((uint8_t *)dest) = reset_flag;
+
+  filled_size_ += sizeof(uint8_t);
 
   // Final check, if we have a full buffer then send it out
   if (filled_size_ == num_bytes_){

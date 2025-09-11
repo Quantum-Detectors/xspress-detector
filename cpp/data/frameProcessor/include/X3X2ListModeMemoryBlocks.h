@@ -81,6 +81,18 @@ namespace FrameProcessor
     boost::shared_ptr <Frame> add_event_height(uint16_t event_height);
   };
 
+  /**
+   * Specific class for managing event reset flag memory blocks
+   */
+  class X3X2ListModeResetFlagMemoryBlock :  public X3X2ListModeMemoryBlock
+  {
+  public:
+    X3X2ListModeResetFlagMemoryBlock(const std::string& name);
+    virtual ~X3X2ListModeResetFlagMemoryBlock();
+
+    boost::shared_ptr <Frame> add_reset_flag(uint8_t reset_flag);
+  };
+
 }
 
 #endif //SRC_X3X2LISTMODEMEMORYBLOCK_H

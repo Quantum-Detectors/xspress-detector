@@ -146,6 +146,15 @@ void X3X2ListModeProcessPlugin::clear_event_height_memory_blocks()
   }
 }
 
+void X3X2ListModeProcessPlugin::clear_reset_flag_memory_blocks()
+{
+  std::map<uint32_t, boost::shared_ptr<X3X2ListModeResetFlagMemoryBlock> >::iterator iter;
+  for (iter = reset_flag_memory_ptrs_.begin(); iter != reset_flag_memory_ptrs_.end(); ++iter){
+    iter->second->reset_frame_count();
+    iter->second->reset();
+  }
+}
+
 void X3X2ListModeProcessPlugin::reset_acquisition()
 {
   LOG4CXX_INFO(logger_, "Resetting acquisition");
@@ -153,6 +162,7 @@ void X3X2ListModeProcessPlugin::reset_acquisition()
   clear_timeframe_memory_blocks();
   clear_timestamp_memory_blocks();
   clear_event_height_memory_blocks();
+  clear_reset_flag_memory_blocks();
 
   num_events_ = 0;
   acquisition_complete_ = false;
@@ -196,6 +206,18 @@ void X3X2ListModeProcessPlugin::flush_event_height_memory_blocks()
   }
 }
 
+void X3X2ListModeProcessPlugin::flush_reset_flag_memory_blocks()
+{
+  std::map<uint32_t, boost::shared_ptr<X3X2ListModeResetFlagMemoryBlock> >::iterator iter;
+  for (iter = reset_flag_memory_ptrs_.begin(); iter != reset_flag_memory_ptrs_.end(); ++iter){
+    LOG4CXX_DEBUG_LEVEL(0, logger_, "Flushing event height for channel " << iter->first);
+    boost::shared_ptr <Frame> list_frame = iter->second->to_frame();
+    if (list_frame){
+      this->push(list_frame);
+    }
+  }
+}
+
 void X3X2ListModeProcessPlugin::flush_close_acquisition()
 {
   LOG4CXX_INFO(logger_, "Flushing and closing acquisition");
@@ -203,6 +225,7 @@ void X3X2ListModeProcessPlugin::flush_close_acquisition()
   flush_timeframe_memory_blocks();
   flush_timestamp_memory_blocks();
   flush_event_height_memory_blocks();
+  flush_reset_flag_memory_blocks();
 
   this->notify_end_of_acquisition();
 }
@@ -227,6 +250,7 @@ void X3X2ListModeProcessPlugin::setup_channel_memory_blocks(uint32_t channel)
   std::string timeframe_name = "ch" + std::to_string(channel) + "_time_frame";
   std::string timestamp_name = "ch" + std::to_string(channel) + "_time_stamp";
   std::string event_height_name = "ch" + std::to_string(channel) + "_event_height";
+  std::string reset_flag_name = "ch" + std::to_string(channel) + "_reset_flag";
 
   // Create the memory blocks
   boost::shared_ptr<X3X2ListModeTimeframeMemoryBlock> frame_ptr =
@@ -250,6 +274,13 @@ void X3X2ListModeProcessPlugin::setup_channel_memory_blocks(uint32_t channel)
   height_ptr->set_size(frame_size_bytes_);
   event_height_memory_ptrs_[channel] = height_ptr;
 
+  boost::shared_ptr<X3X2ListModeResetFlagMemoryBlock> reset_ptr =
+    boost::shared_ptr<X3X2ListModeResetFlagMemoryBlock>(
+      new X3X2ListModeResetFlagMemoryBlock(reset_flag_name)
+    );
+  reset_ptr->set_size(frame_size_bytes_);
+  reset_flag_memory_ptrs_[channel] = reset_ptr;
+
   // Setup the storage vectors for the packet header information
   std::vector<uint32_t> hdr(3, 0);
   packet_headers_[channel] = hdr;
@@ -261,6 +292,7 @@ void X3X2ListModeProcessPlugin::setup_memory_allocation()
   timeframe_memory_ptrs_.clear();
   timestamp_memory_ptrs_.clear();
   event_height_memory_ptrs_.clear();
+  reset_flag_memory_ptrs_.clear();
 
   // Allocate large enough blocks of memory to hold list mode frames
   // Allocate one block of memory for each event field for each channel
@@ -312,6 +344,8 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
   bool end_of_frame = 0;
   bool ttl_a = 0;
   bool ttl_b = 0;
+
+  bool reset_flag = false;
 
   uint16_t channel = -1;
 
@@ -407,6 +441,11 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
             if (list_frame) this->push(list_frame);
 
             list_frame = (event_height_memory_ptrs_[channel])->add_event_height(event_height);
+            // Memory block frame completed
+            if (list_frame) this->push(list_frame);
+
+            reset_flag = (id == 14) ? true : false;
+            list_frame = (reset_flag_memory_ptrs_[channel])->add_reset_flag(reset_flag);
             // Memory block frame completed
             if (list_frame) this->push(list_frame);
 

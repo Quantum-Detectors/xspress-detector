@@ -50,10 +50,12 @@ namespace FrameProcessor
     void clear_timeframe_memory_blocks();
     void clear_timestamp_memory_blocks();
     void clear_event_height_memory_blocks();
+    void clear_reset_flag_memory_blocks();
 
     void flush_timeframe_memory_blocks();
     void flush_timestamp_memory_blocks();
     void flush_event_height_memory_blocks();
+    void flush_reset_flag_memory_blocks();
 
     void setup_channel_memory_blocks(uint32_t channel);
 
@@ -66,16 +68,17 @@ namespace FrameProcessor
     uint32_t num_channels_;
     uint32_t channel_offset_;
 
+    // Acquisition properties
     uint32_t num_time_frames_;
-
     std::map<uint32_t, bool> completed_channels_;
     bool acquisition_complete_;
-
     uint64_t num_events_;
 
+    // Memory blocks for event fields
     std::map<uint32_t, boost::shared_ptr<X3X2ListModeTimeframeMemoryBlock> > timeframe_memory_ptrs_;
     std::map<uint32_t, boost::shared_ptr<X3X2ListModeTimestampMemoryBlock> > timestamp_memory_ptrs_;
     std::map<uint32_t, boost::shared_ptr<X3X2ListModeEventHeightMemoryBlock> > event_height_memory_ptrs_;
+    std::map<uint32_t, boost::shared_ptr<X3X2ListModeResetFlagMemoryBlock> > reset_flag_memory_ptrs_;
 
     std::map<uint32_t, std::vector<uint32_t> > packet_headers_;
 
