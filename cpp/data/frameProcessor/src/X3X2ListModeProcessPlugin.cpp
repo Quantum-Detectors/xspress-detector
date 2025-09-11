@@ -340,6 +340,8 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
 
   uint16_t* frame_data = static_cast<uint16_t *>(frame->get_data_ptr());
 
+  boost::shared_ptr <Frame> list_frame;
+
   // TODO: remove after testing
   std::string ids("");
   std::string values("");
@@ -443,7 +445,7 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
         if (!end_of_frame)
         {
           if (dummy_event == 0) {
-            boost::shared_ptr <Frame> list_frame = (timeframe_memory_ptrs_[channel])->add_timeframe(time_frame);
+            list_frame = (timeframe_memory_ptrs_[channel])->add_timeframe(time_frame);
             // Memory block frame completed
             if (list_frame) this->push(list_frame);
 

@@ -87,7 +87,7 @@ boost::shared_ptr <Frame> X3X2ListModeMemoryBlock::to_frame()
 
 boost::shared_ptr <Frame> X3X2ListModeMemoryBlock::flush()
 {
-  LOG4CXX_INFO(logger_, "[" << name_ << "]" << "Flushing partial frame " << frame_count_ << " of " << filled_size_ << " bytes");
+  LOG4CXX_INFO(logger_, "[" << name_ << "]" << " Flushing partial frame " << frame_count_ << " of " << filled_size_ << " bytes");
   boost::shared_ptr <Frame> frame;
 
   // Create the frame around the current (partial) block
