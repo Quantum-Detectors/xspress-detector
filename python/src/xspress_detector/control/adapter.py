@@ -90,7 +90,6 @@ class XspressAdapter(AsyncApiAdapter):
             if not isinstance(response, dict):
                 response = {"value": response}
 
-            response = "{}".format(response)
             status_code = 200
         except LookupError as e:
             response = {'invalid path': str(e)}
