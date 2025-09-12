@@ -4,6 +4,34 @@ Change log
 Changes made by Quantum Detectors to this repository are recorded below.
 
 
+0.5.0+qd0.4
+-----------
+
+Changed:
+
+- Separated out X3X2 list mode datasets to 1 dataset per event field. The memory
+  block has been split up into a base class and derived classes to manage the
+  different datatypes used for each field. The datasets created are:
+
+  - chX_time_frame (uint64)
+  - chX_time_stamp (uint64)
+  - chX_event_height (uint16)
+  - chX_reset_flag (uint8)
+
+- Changed how the X3X2 list mode plugin tracks acquisition completion
+  as we receive multiple events with the end of frame marker set. Now
+  use a map to track individual channel completion. The additional
+  events are currently ignored.
+- The X3X2 list mode processor plugin now sets the size of each memory
+  block based on number of events stored (versus using bytes). The `frame_size`
+  option under `xspress-list` in the JSON configuration file is used to define
+  the number of events per memory block frame.
+
+Fixed:
+
+- Fixed issue with parsing the time frame bits in the X3X2 list mode plugin
+
+
 0.5.0+qd0.3
 -----------
 

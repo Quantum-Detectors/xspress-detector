@@ -12,36 +12,11 @@ using namespace log4cxx::helpers;
 
 #include "FrameProcessorPlugin.h"
 #include "XspressDefinitions.h"
+#include "X3X2ListModeMemoryBlocks.h"
 #include "gettime.h"
 
 namespace FrameProcessor
 {
-
-  class X3X2ListModeMemoryBlock
-  {
-  public:
-    X3X2ListModeMemoryBlock(const std::string& name);
-    virtual ~X3X2ListModeMemoryBlock();
-    void set_size(uint32_t bytes);
-    void reallocate();
-    void reset();
-    void reset_frame_count();
-    boost::shared_ptr <Frame> add_event(uint64_t time_frame, uint64_t time_stamp, uint64_t event_height);
-    boost::shared_ptr <Frame> to_frame();
-    boost::shared_ptr <Frame> flush();
-
-  private:
-    void *ptr_;
-    std::string name_;
-    uint32_t num_bytes_;
-    uint32_t filled_size_;  // Filled size in bytes
-    uint32_t frame_count_;
-
-    const uint32_t num_bytes_per_event_ = 24;
-
-    /** Pointer to logger */
-    LoggerPtr logger_;
-  };
 
   class X3X2ListModeProcessPlugin : public FrameProcessorPlugin 
   {
@@ -68,22 +43,47 @@ namespace FrameProcessor
     void reset_acquisition();
     void flush_close_acquisition();
     void set_channels(std::vector<uint32_t> channels);
-    void set_frame_size(uint32_t num_bytes);
+    void set_frame_size(uint32_t num_events);
     void setup_memory_allocation();
-        
+
+    // Memory blocks
+    void clear_timeframe_memory_blocks();
+    void clear_timestamp_memory_blocks();
+    void clear_event_height_memory_blocks();
+    void clear_reset_flag_memory_blocks();
+
+    void flush_timeframe_memory_blocks();
+    void flush_timestamp_memory_blocks();
+    void flush_event_height_memory_blocks();
+    void flush_reset_flag_memory_blocks();
+
+    void setup_channel_memory_blocks(uint32_t channel);
+
+    void reset_channel_statistics();
+
     // Plugin interface
     void status(OdinData::IpcMessage& status);
     void process_frame(boost::shared_ptr <Frame> frame);
 
-    uint32_t frame_size_bytes_;
+    uint32_t frame_size_events_;
     std::vector<uint32_t> channels_;
     uint32_t num_channels_;
     uint32_t channel_offset_;
 
+    // Acquisition properties
     uint32_t num_time_frames_;
-    uint32_t num_completed_channels_;
+    bool acquisition_complete_;
 
-    std::map<uint32_t, boost::shared_ptr<X3X2ListModeMemoryBlock> > memory_ptrs_;
+    // Tracking per channel
+    std::map<uint32_t, bool> completed_channels_;
+    std::map<uint32_t, uint64_t> num_events_;
+
+    // Memory blocks for event fields
+    std::map<uint32_t, boost::shared_ptr<X3X2ListModeTimeframeMemoryBlock> > timeframe_memory_ptrs_;
+    std::map<uint32_t, boost::shared_ptr<X3X2ListModeTimestampMemoryBlock> > timestamp_memory_ptrs_;
+    std::map<uint32_t, boost::shared_ptr<X3X2ListModeEventHeightMemoryBlock> > event_height_memory_ptrs_;
+    std::map<uint32_t, boost::shared_ptr<X3X2ListModeResetFlagMemoryBlock> > reset_flag_memory_ptrs_;
+
     std::map<uint32_t, std::vector<uint32_t> > packet_headers_;
 
     static const std::string CONFIG_CHANNELS;
