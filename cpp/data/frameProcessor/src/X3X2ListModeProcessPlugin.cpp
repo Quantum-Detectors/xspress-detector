@@ -407,7 +407,7 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
         ttl_a = value & 0x2;
         ttl_b = value & 0x4;
         dummy_event = value & 0x8;
-        time_frame = (time_frame & 0xFFFFFFFFFFFFFF00) | ((value_64 &0xFF0) >> 4);
+        time_frame = (time_frame & 0xFFFFFFFFFFFFFF00) | ((value_64 & 0xFF0) >> 4);
         break;
       case 5:
         time_frame = (time_frame & 0xFFFFFFFFFFF000FF) | (value_64 << 8);
@@ -424,8 +424,8 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
       case 9:
         // Calculate actual channel in system
         channel = (value >> 8) + channel_offset_;
-        // Check we have the right channel (and ignore markers)
-        if (timestamp_memory_ptrs_.find(channel) == timestamp_memory_ptrs_.end()) {
+        // Check we have the right channel (and ignore marker channels for now)
+        if (std::find(channels_.begin(), channels_.end(), channel) == channels_.end()) {
           // Ignore entire packet
           return;
         }
