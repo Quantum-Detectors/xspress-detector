@@ -43,7 +43,7 @@ namespace FrameProcessor
     void reset_acquisition();
     void flush_close_acquisition();
     void set_channels(std::vector<uint32_t> channels);
-    void set_frame_size(uint32_t num_bytes);
+    void set_frame_size(uint32_t num_events);
     void setup_memory_allocation();
 
     // Memory blocks
@@ -65,7 +65,7 @@ namespace FrameProcessor
     void status(OdinData::IpcMessage& status);
     void process_frame(boost::shared_ptr <Frame> frame);
 
-    uint32_t frame_size_bytes_;
+    uint32_t frame_size_events_;
     std::vector<uint32_t> channels_;
     uint32_t num_channels_;
     uint32_t channel_offset_;

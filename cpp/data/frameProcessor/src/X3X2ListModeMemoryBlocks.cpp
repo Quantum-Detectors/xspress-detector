@@ -38,6 +38,9 @@ X3X2ListModeMemoryBlock::~X3X2ListModeMemoryBlock()
   }
 }
 
+/**
+ * Set the size of the memory block in bytes.
+ */
 void X3X2ListModeMemoryBlock::set_size(uint32_t bytes)
 {
   // Round allocation down to number of whole events

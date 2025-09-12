@@ -227,55 +227,73 @@ void X3X2ListModeProcessPlugin::flush_close_acquisition()
   this->notify_end_of_acquisition();
 }
 
-void X3X2ListModeProcessPlugin::set_frame_size(uint32_t num_bytes)
+/**
+ * Set the frame size in terms of number of events for each memory block
+ *
+ * This is different from Xspress 4 which uses bytes as we want a separate
+ * dataset for each event field here.
+ *
+ *  \param[in] num_events - number of events to store per frame
+ */
+void X3X2ListModeProcessPlugin::set_frame_size(uint32_t num_events)
 {
-  LOG4CXX_INFO(logger_, "Setting frame size to " << num_bytes << " bytes");
-  frame_size_bytes_ = num_bytes;
+  LOG4CXX_INFO(logger_, "Setting frame size to " << num_events << " events");
+  frame_size_events_ = num_events;
   // We must reallocate memory blocks
   setup_memory_allocation();
 }
 
 /**
  * Set up the channel memory blocks for a single channel
- * 
+ *
  * A separate block is used for each event field.
- * 
+ *
  * \param[in] channel - Channel number
  */
 void X3X2ListModeProcessPlugin::setup_channel_memory_blocks(uint32_t channel)
 {
+  // Names for memory block frames
   std::string timeframe_name = "ch" + std::to_string(channel) + "_time_frame";
   std::string timestamp_name = "ch" + std::to_string(channel) + "_time_stamp";
   std::string event_height_name = "ch" + std::to_string(channel) + "_event_height";
   std::string reset_flag_name = "ch" + std::to_string(channel) + "_reset_flag";
+
+  // Size of each memory block in bytes based on the number of events we want to
+  // store in each frame
+  uint32_t frame_size_tf_bytes = frame_size_events_ * sizeof(uint64_t);
+  uint32_t frame_size_ts_bytes = frame_size_events_ * sizeof(uint64_t);
+  uint32_t frame_size_eh_bytes = frame_size_events_ * sizeof(uint16_t);
+  uint32_t frame_size_rf_bytes = frame_size_events_ * sizeof(uint8_t);
 
   // Create the memory blocks
   boost::shared_ptr<X3X2ListModeTimeframeMemoryBlock> frame_ptr =
     boost::shared_ptr<X3X2ListModeTimeframeMemoryBlock>(
       new X3X2ListModeTimeframeMemoryBlock(timeframe_name)
     );
-  frame_ptr->set_size(frame_size_bytes_);
+  frame_ptr->set_size(frame_size_tf_bytes);
   timeframe_memory_ptrs_[channel] = frame_ptr;
 
   boost::shared_ptr<X3X2ListModeTimestampMemoryBlock> stamp_ptr =
     boost::shared_ptr<X3X2ListModeTimestampMemoryBlock>(
       new X3X2ListModeTimestampMemoryBlock(timestamp_name)
     );
-  stamp_ptr->set_size(frame_size_bytes_);
+  stamp_ptr->set_size(frame_size_ts_bytes);
   timestamp_memory_ptrs_[channel] = stamp_ptr;
 
   boost::shared_ptr<X3X2ListModeEventHeightMemoryBlock> height_ptr =
     boost::shared_ptr<X3X2ListModeEventHeightMemoryBlock>(
       new X3X2ListModeEventHeightMemoryBlock(event_height_name)
     );
-  height_ptr->set_size(frame_size_bytes_);
+  // TODO: testing smaller frame size in case it fixes missing events
+  height_ptr->set_size(frame_size_eh_bytes);
   event_height_memory_ptrs_[channel] = height_ptr;
 
   boost::shared_ptr<X3X2ListModeResetFlagMemoryBlock> reset_ptr =
     boost::shared_ptr<X3X2ListModeResetFlagMemoryBlock>(
       new X3X2ListModeResetFlagMemoryBlock(reset_flag_name)
     );
-  reset_ptr->set_size(frame_size_bytes_);
+  // TODO: testing smaller frame size in case it fixes missing events
+  reset_ptr->set_size(frame_size_rf_bytes);
   reset_flag_memory_ptrs_[channel] = reset_ptr;
 
   // Setup the storage vectors for the packet header information
