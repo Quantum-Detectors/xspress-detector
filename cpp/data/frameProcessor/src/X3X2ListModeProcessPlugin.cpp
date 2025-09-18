@@ -22,6 +22,8 @@ X3X2ListModeProcessPlugin::X3X2ListModeProcessPlugin() :
   num_time_frames_(0),
   num_events_(),
   completed_channels_(),
+  current_time_frames_(),
+  prev_time_stamps_(),
   acquisition_complete_(false)
 {
   // Setup logging for the class
@@ -307,11 +309,15 @@ void X3X2ListModeProcessPlugin::setup_channel_memory_blocks(uint32_t channel)
 void X3X2ListModeProcessPlugin::reset_channel_statistics()
 {
   completed_channels_.clear();
+  current_time_frames_.clear();
+  prev_time_stamps_.clear();
   num_events_.clear();
   for (auto const& chan : channels_)
   {
     completed_channels_[chan] = false;
     num_events_[chan] = 0;
+    current_time_frames_[chan] = 0;
+    prev_time_stamps_[chan] = 0;
   }
 }
 
@@ -453,14 +459,31 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
         // Event height
         event_height = value;
 
-        // TODO: remove when tested
-        //LOG4CXX_INFO(logger_, "Got values: " << time_frame << ", " << time_stamp << ", " << event_height << " for first event ");
-        //return
+        // TODO: remove when tested?
+        // Keep track of previous time frame
+        if (time_frame != current_time_frames_[channel])
+        {
+          if (time_frame < current_time_frames_[channel])
+          {
+            LOG4CXX_INFO(logger_, "Channel " << channel << " stepped back from " << current_time_frames_[channel] << " to " << time_frame);
+          }
+          else if (time_frame != current_time_frames_[channel] + 1)
+          {
+            LOG4CXX_INFO(logger_, "Channel " << channel << " jumped from " << current_time_frames_[channel] << " to " << time_frame);
+          }
+          current_time_frames_[channel] = time_frame;
+        }
+
+        if (time_stamp < prev_time_stamps_[channel])
+        {
+          LOG4CXX_INFO(logger_, "Channel " << channel << " walk back timestamp at field " << field);
+        }
+        prev_time_stamps_[channel] = time_stamp;
 
         // xspress3m_active_readout only counts events when not end of frame so we copy this logic here
         if (!end_of_frame)
         {
-          if (dummy_event == 0) {
+          if (!dummy_event) {
             boost::shared_ptr <Frame> frame;
 
             frame = (timeframe_memory_ptrs_[channel])->add_timeframe(time_frame);
@@ -488,7 +511,7 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
         {
           // TODO: work out why we get more events after the end of frame marker is set and see if we need to
           // save them or ignore them (we ignore them here)
-          LOG4CXX_INFO(logger_, "Channel " << channel << " got end of frame for frame " << time_frame);
+          // LOG4CXX_INFO(logger_, "Channel " << channel << " got end of frame for frame " << time_frame);
           if (time_frame + 1 == num_time_frames_)
           {
             LOG4CXX_INFO(logger_, "Acquisition of " << num_time_frames_ << " frames complete for channel " << channel);
@@ -516,11 +539,9 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
             }
           }
         }
-
         break;
     }
   }
-
 }
 
 }
