@@ -465,18 +465,43 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
         {
           if (time_frame < current_time_frames_[channel])
           {
-            LOG4CXX_INFO(logger_, "Channel " << channel << " stepped back from " << current_time_frames_[channel] << " to " << time_frame);
+            LOG4CXX_INFO(
+              logger_,
+              "Channel "
+              << channel
+              << " stepped back from "
+              << current_time_frames_[channel]
+              << " to "
+              << time_frame
+              << " at field " << field
+            );
           }
           else if (time_frame != current_time_frames_[channel] + 1)
           {
-            LOG4CXX_INFO(logger_, "Channel " << channel << " jumped from " << current_time_frames_[channel] << " to " << time_frame);
+            LOG4CXX_INFO(
+              logger_,
+              "Channel "
+              << channel
+              << " jumped from "
+              << current_time_frames_[channel]
+              << " to "
+              << time_frame
+              << " (eof: " << end_of_frame << ")"
+            );
           }
           current_time_frames_[channel] = time_frame;
         }
 
         if (time_stamp < prev_time_stamps_[channel])
         {
-          LOG4CXX_INFO(logger_, "Channel " << channel << " walk back timestamp at field " << field);
+          LOG4CXX_INFO(
+            logger_,
+            "Channel "
+            << channel
+            << " walk back timestamp at field "
+            << field
+            << " (eof: " << end_of_frame << ")"
+          );
         }
         prev_time_stamps_[channel] = time_stamp;
 
