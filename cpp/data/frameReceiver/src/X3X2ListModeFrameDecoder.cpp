@@ -84,9 +84,11 @@ void *X3X2ListModeFrameDecoder::get_next_message_buffer(void) {
   if (receive_state_ != FrameDecoder::FrameReceiveStateIncomplete) {
     // get id in buffer circularly
     if (current_frame_buffer_id_ + 1 >= num_buffers_)
+    {
+      LOG4CXX_INFO(logger_, "Reached end of buffer. Starting over");
       current_frame_buffer_id_ = 0;
-    else
-      current_frame_buffer_id_++;
+    }
+    else current_frame_buffer_id_++;
 
     // Update position to new frame in frame buffer
     current_raw_buffer_ = buffer_manager_->get_buffer_address(current_frame_buffer_id_);
