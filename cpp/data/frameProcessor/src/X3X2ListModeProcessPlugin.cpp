@@ -364,10 +364,6 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
 
   uint16_t* frame_data = static_cast<uint16_t *>(frame->get_data_ptr());
 
-  // TODO: remove after testing
-  std::string ids("");
-  std::string values("");
-
   // Event attributes
   uint16_t acquisition_number = 0;
   uint64_t time_frame = 0;
@@ -398,10 +394,6 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
     id = frame_data[field] >> 12;
     value = frame_data[field] & 0xFFF;
     value_64 = (uint64_t) value;
-
-    // TODO: remove after testing
-    //ids += std::to_string(id) + ",";
-    //values += std::to_string(value) + ",";
 
     switch (id)
     {
