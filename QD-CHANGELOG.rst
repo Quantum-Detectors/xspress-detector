@@ -10,7 +10,7 @@ Unreleased
 Changed:
 
 - Increased the size of the X3X2ListModeFrameDecoder buffer to 12,800 TCP frames
-  (100MB) per channel as the default value of 5 meant that old buffer data was
+  (100MB) per receiver as the default value of 5 meant that old buffer data was
   being overwritten before it was being processed when the Xspress system was
   generating a large number of events
 - Added logging to check the time frames and time stamps do not decrease
