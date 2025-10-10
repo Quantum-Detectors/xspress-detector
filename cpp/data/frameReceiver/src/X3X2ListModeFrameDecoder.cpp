@@ -82,11 +82,9 @@ void X3X2ListModeFrameDecoder::request_configuration(
 void *X3X2ListModeFrameDecoder::get_next_message_buffer(void) {
   // only increment buffer when frame is complete
   if (receive_state_ != FrameDecoder::FrameReceiveStateIncomplete) {
-    // get id in buffer circularly
-    if (current_frame_buffer_id_ + 1 >= num_buffers_)
-      current_frame_buffer_id_ = 0;
-    else
-      current_frame_buffer_id_++;
+    // Get the buffer ID from the circular buffer
+    if (current_frame_buffer_id_ + 1 >= num_buffers_) current_frame_buffer_id_ = 0;
+    else current_frame_buffer_id_++;
 
     // Update position to new frame in frame buffer
     current_raw_buffer_ = buffer_manager_->get_buffer_address(current_frame_buffer_id_);
@@ -130,9 +128,8 @@ X3X2ListModeFrameDecoder::process_message(size_t bytes_received) {
   // LOG4CXX_INFO(logger_, "Processing " << bytes_received << " bytes");
   if (read_so_far_ + bytes_received == frame_size_) {
     read_so_far_ = 0;
-    // For now just send a single TCP frame
-    // LOG4CXX_INFO(logger_, "Completed TCP frame: " << current_frame_number_ << " in buffer " << current_frame_buffer_id_);
 
+    // Just send a single TCP frame
     ready_callback_(current_frame_buffer_id_, current_frame_number_);
 
     // Increment frame number
@@ -156,8 +153,8 @@ X3X2ListModeFrameDecoder::process_message(size_t bytes_received) {
 /**
  * Get the size of the next message to receiver over the TCP socket
  *
- * X3X2 uses fixed 8192 byte TCP frames and pads as necessary so wait
- * for this.
+ * X3X2 uses fixed 8192 byte TCP frames and pads as necessary for
+ * sparse events
  *
  * \return The size of the next TCP message
  */

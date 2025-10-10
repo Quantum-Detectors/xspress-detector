@@ -4,6 +4,23 @@ Change log
 Changes made by Quantum Detectors to this repository are recorded below.
 
 
+Unreleased
+----------
+
+Changed:
+
+- Increased the size of the X3X2ListModeFrameDecoder buffer to 12,800 TCP frames
+  (100MB) per receiver as the default value of 5 meant that old buffer data was
+  being overwritten before it was being processed when the Xspress system was
+  generating a large number of events
+- Added logging to check the time frames and time stamps do not decrease
+  during an acquisition. This could happen if the processors fall behind the
+  receivers and the receivers end up overwriting data that hasn't been
+  processed in the circular buffer. This will be fixed in the future by changing
+  the TCP receiver to drop packets that would otherwise overwrite the unprocessed
+  data.
+
+
 0.5.0+qd0.4
 -----------
 
