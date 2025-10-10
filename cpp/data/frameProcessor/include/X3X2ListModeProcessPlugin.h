@@ -77,7 +77,7 @@ namespace FrameProcessor
     // Tracking per channel
     std::map<uint32_t, bool> completed_channels_;
     std::map<uint32_t, uint64_t> num_events_;
-    std::map<uint32_t, uint64_t> current_time_frames_;
+    std::map<uint32_t, uint64_t> prev_time_frames_;
     std::map<uint32_t, uint64_t> prev_time_stamps_;
 
     // Memory blocks for event fields
