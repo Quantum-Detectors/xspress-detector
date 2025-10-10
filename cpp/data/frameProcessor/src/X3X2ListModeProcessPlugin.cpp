@@ -219,14 +219,22 @@ void X3X2ListModeProcessPlugin::flush_reset_flag_memory_blocks()
 
 void X3X2ListModeProcessPlugin::flush_close_acquisition()
 {
-  LOG4CXX_INFO(logger_, "Flushing and closing acquisition");
+  // Only flush if we have a running acquisition
+  if (!acquisition_complete_)
+  {
+    LOG4CXX_INFO(logger_, "Flushing and closing acquisition");
 
-  flush_timeframe_memory_blocks();
-  flush_timestamp_memory_blocks();
-  flush_event_height_memory_blocks();
-  flush_reset_flag_memory_blocks();
+    flush_timeframe_memory_blocks();
+    flush_timestamp_memory_blocks();
+    flush_event_height_memory_blocks();
+    flush_reset_flag_memory_blocks();
 
-  this->notify_end_of_acquisition();
+    this->notify_end_of_acquisition();
+  }
+  else
+  {
+    LOG4CXX_INFO(logger_, "Skipping flush - no acquisition active");
+  }
 }
 
 /**

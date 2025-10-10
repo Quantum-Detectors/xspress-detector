@@ -374,6 +374,14 @@ int XspressDetector::restoreSettings()
     }
   }
 
+  // Setup channel data sources
+  if (status == XSP_STATUS_OK){
+    status = detector_->set_channel_sources(xsp_run_flags_);
+    if (status != XSP_STATUS_OK){
+      setErrorString(detector_->getErrorString());
+    }
+  }
+
   // Read existing SCA params
   if (status == XSP_STATUS_OK){
     status = readSCAParams();

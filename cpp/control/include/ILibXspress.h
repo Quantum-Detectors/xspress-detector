@@ -186,6 +186,7 @@ public:
   virtual int set_trigger_input(bool list_mode) = 0;
   virtual int setup_clocks(int num_cards) = 0;
   virtual int enable_list_mode_resets() = 0;
+  virtual int set_channel_sources(int run_flags) = 0;
 
   static const int runFlag_MCA_SPECTRA_;
   static const int runFlag_SCALERS_ONLY_;

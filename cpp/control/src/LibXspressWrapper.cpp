@@ -1315,4 +1315,67 @@ int LibXspressWrapper::enable_list_mode_resets()
   return status;
 }
 
+/**
+ *
+ * @brief Configure the channel sources based on the selected run flags
+ * 
+ * This ensures that the correct source is selected based on the user selected
+ * option as otherwise this is set when restoring settings.
+ *
+ * - If run flags is set for playback, set channel sources to use playback
+ * - If run flags is set for real data, set channel sources to real ADC values
+ *
+ * @param[in] run_flags Run flags we are configuring for
+ * @return int Status whether we configured the channels successfully
+ */
+int LibXspressWrapper::set_channel_sources(int run_flags)
+{
+  // Get desired data source
+  u_int32_t data_source;
+  switch (run_flags)
+  {
+    case runFlag_PLAYB_MCA_SPECTRA_:
+      LOG4CXX_INFO(logger_, "Configuring channel control registers for playback data");
+      data_source = XSP3_CC_SEL_DATA_PB_CHAN;
+      break;
+    default:
+      LOG4CXX_INFO(logger_, "Configuring channel control registers for real ADC data");
+      data_source = XSP3_CC_SEL_DATA_NORMAL;
+      break;
+  }
+
+  int num_chan = xsp3_get_num_chan(xsp_handle_);
+  if (num_chan < 0)
+  {
+    LOG4CXX_ERROR(logger_, "Error configuring channel control registers: could not determine num_chan");
+    return XSP_STATUS_ERROR;
+  }
+
+  // Apply for each channel
+  int status = XSP_STATUS_OK;
+  int xsp_status;
+  u_int32_t chan_cont = 0;
+  for (int chan = 0; chan < num_chan; chan++)
+  {
+    // Get current control register value
+    xsp_status = xsp3_get_chan_cont(xsp_handle_, chan, &chan_cont);
+    if (xsp_status < 0) {
+      checkErrorCode("xsp3_get_chan_cont", xsp_status);
+      return XSP_STATUS_ERROR;
+    }
+
+    // Unset all data sources and set the desired source
+    chan_cont &= ~XSP3_CC_SEL_DATA(0xFF);
+    chan_cont |= XSP3_CC_SEL_DATA(data_source);
+
+    xsp_status = xsp3_set_chan_cont(xsp_handle_, chan, chan_cont);
+    if (xsp_status < 0) {
+      checkErrorCode("xsp3_set_chan_cont", xsp_status);
+      return XSP_STATUS_ERROR;
+    }
+  }
+
+  return XSP_STATUS_OK;
+}
+
 } /* namespace Xspress */
