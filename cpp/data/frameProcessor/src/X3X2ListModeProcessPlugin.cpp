@@ -229,6 +229,9 @@ void X3X2ListModeProcessPlugin::flush_close_acquisition()
     flush_event_height_memory_blocks();
     flush_reset_flag_memory_blocks();
 
+    // Mark acquisition as complete so we do not process any more data
+    acquisition_complete_ = true;
+
     this->notify_end_of_acquisition();
   }
   else
@@ -367,7 +370,9 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
 {
   // LOG4CXX_INFO(logger_, "Processing frame " << frame->get_frame_number() << " of size " << frame->get_data_size() << " at " << frame->get_data_ptr());
 
-  // Packet arrived after we got the EOF for the desired time frame
+  // Packet arrived after we have completed the acquisition - either by
+  // receiving the EOF for the desired TF on all channels or it was manually
+  // stopped using the Odin Data API
   if (acquisition_complete_) return;
 
   uint16_t* frame_data = static_cast<uint16_t *>(frame->get_data_ptr());
@@ -537,7 +542,6 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
             if (completed_channels == num_channels_)
             {
               this->flush_close_acquisition();
-              acquisition_complete_ = true;
               LOG4CXX_INFO(logger_, "Acquisition of " << num_time_frames_ << " frames completed for all channels");
               for (auto const& chan : channels_)
               {
