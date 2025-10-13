@@ -969,4 +969,10 @@ int LibXspressSimulator::enable_list_mode_resets()
   return XSP_STATUS_OK;
 }
 
+int LibXspressSimulator::set_channel_sources(int run_flags)
+{
+  // This is a no op for the simulator
+  return XSP_STATUS_OK;
+}
+
 } /* namespace Xspress */

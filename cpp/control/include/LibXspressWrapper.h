@@ -193,6 +193,7 @@ public:
   int set_trigger_input(bool list_mode);
   int setup_clocks(int num_cards);
   int enable_list_mode_resets();
+  int set_channel_sources(int run_flags);
 
   static const int runFlag_MCA_SPECTRA_;
   static const int runFlag_SCALERS_ONLY_;
