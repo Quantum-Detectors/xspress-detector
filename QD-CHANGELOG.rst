@@ -4,8 +4,8 @@ Change log
 Changes made by Quantum Detectors to this repository are recorded below.
 
 
-Unreleased
-----------
+0.5.0+qd0.5
+-----------
 
 Changed:
 
@@ -19,6 +19,14 @@ Changed:
   processed in the circular buffer. This will be fixed in the future by changing
   the TCP receiver to drop packets that would otherwise overwrite the unprocessed
   data.
+- Now sets the data sources in the Xspress channel control registers to ADC or
+  playback based on the run flags setting to use the matching data source
+
+Fixed:
+
+- Now only send the last frame on flush_close_acquisition in list mode once -
+  either from acquiring the desired number of time frames or from manually
+  stopping the Odin data writers
 
 
 0.5.0+qd0.4
