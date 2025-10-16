@@ -1352,7 +1352,6 @@ int LibXspressWrapper::set_channel_sources(int run_flags)
   }
 
   // Apply for each channel
-  int status = XSP_STATUS_OK;
   int xsp_status;
   u_int32_t chan_cont = 0;
   for (int chan = 0; chan < num_chan; chan++)
@@ -1373,6 +1372,51 @@ int LibXspressWrapper::set_channel_sources(int run_flags)
       checkErrorCode("xsp3_set_chan_cont", xsp_status);
       return XSP_STATUS_ERROR;
     }
+  }
+
+  return XSP_STATUS_OK;
+}
+
+/**
+ *
+ * @brief Configure the marker channels
+ *
+ * This enables the marker channels to listen to the corresponding
+ * TTL inputs and produce timestamps at the rise and fall.
+ *
+ * @param[in] run_flags Run flags we are configuring for
+ * @return int Status whether we configured the channels successfully
+ */
+int LibXspressWrapper::setup_marker_channels()
+{
+  LOG4CXX_INFO(logger_, "Configuring marker channels");
+  // TODO: ensure that changing the trigger mode does not override
+  // these settings - e.g. listening to rise and fall doesn't
+  // advance time frame twice
+
+  // Apply for each channel
+  int num_marker_chans = 2; // TODO: find out if we can query this
+  int status = XSP_STATUS_OK;
+  int xsp_status;
+  u_int32_t chan_cont = 0;
+  for (int chan = 0; chan < num_marker_chans; chan++)
+  {
+    // There are two register values written when setting up the marker channel
+    xsp_status = xsp3_read_marker_chan(xsp_handle_, chan, XSP3_CAL_CONT, 1, &chan_cont);
+    LOG4CXX_INFO(logger_, "Channel " << chan << " XSP3_CAL_CONT: " << chan_cont);
+
+    xsp_status = xsp3_read_marker_chan(xsp_handle_, chan, XSP3_CHAN_CONT, 1, &chan_cont);
+    LOG4CXX_INFO(logger_, "Channel " << chan << " XSP3_CHAN_CONT: " << chan_cont);
+
+    // Configure the marker channels to external inputs
+    chan_cont &= ~XSP3_CC_SEL_DATA(0xFF);
+    if (chan % 2 == 0) chan_cont |= XSP3_CC_SEL_DATA(XSP3_CC_SEL_DATA_EXT0);
+    else chan_cont |= XSP3_CC_SEL_DATA(XSP3_CC_SEL_DATA_EXT1);
+    chan_cont = 0; // TODO: find out correct value
+
+    // TODO: make sure we understand what chan_cont means for marker channels
+    if (chan % 2 == 0) xsp_status = xsp3_setup_marker_chan(xsp_handle_, chan, chan_cont, 1, 1, 0);
+    else xsp_status = xsp3_setup_marker_chan(xsp_handle_, chan, chan_cont, 1, 1, 1);
   }
 
   return XSP_STATUS_OK;
