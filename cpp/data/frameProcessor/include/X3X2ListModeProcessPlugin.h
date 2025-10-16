@@ -70,6 +70,10 @@ namespace FrameProcessor
     uint32_t num_channels_;
     uint32_t channel_offset_;
 
+    // Whether marker channels are enabled
+    bool marker_channels_enabled_;
+    std::vector<uint32_t> marker_channels_;
+
     // Acquisition properties
     uint32_t num_time_frames_;
     bool acquisition_complete_;
@@ -89,6 +93,7 @@ namespace FrameProcessor
     std::map<uint32_t, std::vector<uint32_t> > packet_headers_;
 
     static const std::string CONFIG_CHANNELS;
+    static const std::string CONFIG_MARKERS_ENABLED;
     static const std::string CONFIG_RESET_ACQUISITION;
     static const std::string CONFIG_FLUSH_ACQUISITION;
     static const std::string CONFIG_FRAME_SIZE;
