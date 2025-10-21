@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include "dirent.h"
+#include <iostream>
 
 #include "LibXspressWrapper.h"
 #include "DebugLevelLogger.h"
@@ -1190,19 +1191,28 @@ int LibXspressWrapper::set_trigger_input(bool list_mode)
   int xsp_status;
   Xsp3TriggerMux trig_mux;
   memset(&trig_mux, 0, sizeof(Xsp3TriggerMux));
-
+  LOG4CXX_INFO(logger_, "list mode: " << list_mode << ", setting trigger inputs accordingly");
   if (list_mode){
     // TODO: Ben: check if these are correct
     trig_mux.trig_sel[0] = 0;
-    trig_mux.trig_sel[1] = 2;
-    trig_mux.trig_sel[2] = 1;
-    trig_mux.trig_sel[3] = 0;
+    trig_mux.trig_sel[1] = 1;
+    trig_mux.trig_sel[2] = 0;
+    trig_mux.trig_sel[3] = 1;
+    LOG4CXX_INFO(logger_, "Setting trigger inputs for list mode: "
+         << trig_mux.trig_sel[0] << ", "
+         << trig_mux.trig_sel[1] << ", "
+         << trig_mux.trig_sel[2] << ", "
+         << trig_mux.trig_sel[3]);
   } else {
     for (int i = 0; i < 4; i++){
       trig_mux.trig_sel[i] = i;
     }
   }
-
+  xsp_status = xsp3_set_glob_trigger_select(0, 0, &trig_mux);
+  if (xsp_status != XSP3_OK) {
+    checkErrorCode("xsp3_set_trigger_mux", xsp_status, true);
+    status = XSP_STATUS_ERROR;
+  }
   return status;
 }
 
