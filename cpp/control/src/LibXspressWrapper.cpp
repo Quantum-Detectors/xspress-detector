@@ -1193,7 +1193,6 @@ int LibXspressWrapper::set_trigger_input(bool list_mode)
   memset(&trig_mux, 0, sizeof(Xsp3TriggerMux));
   LOG4CXX_INFO(logger_, "list mode: " << list_mode << ", setting trigger inputs accordingly");
   if (list_mode){
-    // TODO: Ben: check if these are correct
     trig_mux.trig_sel[0] = 0;
     trig_mux.trig_sel[1] = 1;
     trig_mux.trig_sel[2] = 0;
