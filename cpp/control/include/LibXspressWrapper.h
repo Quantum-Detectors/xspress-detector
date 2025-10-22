@@ -194,6 +194,7 @@ public:
   int setup_clocks(int num_cards);
   int enable_list_mode_resets();
   int set_channel_sources(int run_flags);
+  int setup_marker_channels();
 
   static const int runFlag_MCA_SPECTRA_;
   static const int runFlag_SCALERS_ONLY_;

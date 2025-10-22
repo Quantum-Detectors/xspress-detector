@@ -3,6 +3,13 @@ Change log
 
 Changes made by Quantum Detectors to this repository are recorded below.
 
+0.5.0+qd0.6
+----------- 
+
+Added:
+- Muxing for the TTL inputs which with the 0.7.1 pyxspress release of configuration files
+  allows TTL in 0 and TTL in 1 to be recorded in the dataset.
+
 
 0.5.0+qd0.5
 -----------

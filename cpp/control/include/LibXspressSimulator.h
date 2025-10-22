@@ -158,6 +158,7 @@ public:
   int setup_clocks(int num_cards);
   int enable_list_mode_resets();
   int set_channel_sources(int run_flags);
+  int setup_marker_channels();
 
 private:
   /** String representation of trigger modes */

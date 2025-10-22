@@ -11,6 +11,7 @@
 namespace FrameProcessor {
 
 const std::string X3X2ListModeProcessPlugin::CONFIG_CHANNELS =           "channels";
+const std::string X3X2ListModeProcessPlugin::CONFIG_MARKERS_ENABLED =    "markers";
 const std::string X3X2ListModeProcessPlugin::CONFIG_RESET_ACQUISITION =  "reset";
 const std::string X3X2ListModeProcessPlugin::CONFIG_FLUSH_ACQUISITION =  "flush";
 const std::string X3X2ListModeProcessPlugin::CONFIG_FRAME_SIZE =         "frame_size";
@@ -19,11 +20,14 @@ const std::string X3X2ListModeProcessPlugin::CONFIG_TIME_FRAMES =        "time_f
 X3X2ListModeProcessPlugin::X3X2ListModeProcessPlugin() :
   num_channels_(0),
   channel_offset_(0),
+  marker_channels_enabled_(false),
+  marker_channels_(),
   num_time_frames_(0),
   num_events_(),
   completed_channels_(),
   prev_time_frames_(),
   prev_time_stamps_(),
+  frame_size_events_(524280),
   acquisition_complete_(false)
 {
   // Setup logging for the class
@@ -38,6 +42,13 @@ X3X2ListModeProcessPlugin::~X3X2ListModeProcessPlugin()
 
 void X3X2ListModeProcessPlugin::configure(OdinData::IpcMessage& config, OdinData::IpcMessage& reply) 
 {
+  if (config.has_param(X3X2ListModeProcessPlugin::CONFIG_MARKERS_ENABLED)){
+    // Marker channels are disabled by default
+    const rapidjson::Value& markers = config.get_param<const rapidjson::Value&>(X3X2ListModeProcessPlugin::CONFIG_MARKERS_ENABLED);
+    marker_channels_enabled_ = markers.GetBool();
+    LOG4CXX_INFO(logger_, "Marker channels enabled: " << marker_channels_enabled_);
+  }
+
   if (config.has_param(X3X2ListModeProcessPlugin::CONFIG_CHANNELS)){
     std::stringstream ss;
     ss << "Configure process plugin for channels [";
@@ -103,17 +114,44 @@ std::string X3X2ListModeProcessPlugin::get_version_long()
   return XSPRESS_DETECTOR_VERSION_STR;
 }
 
+/**
+ * Set the channels we are writing data for.
+ * 
+ * The channels should be based on the channel number in the system, rather than
+ * relative to each ADC card (i.e. the first card has real channels 0,1 the
+ * second has 2,3 etc.)
+ * 
+ * If the first channel is 0 then we also add the marker channels automatically
+ *
+ *  \param[in] channels Vector containing the channel numbers we are writing for
+ */
 void X3X2ListModeProcessPlugin::set_channels(std::vector<uint32_t> channels)
 {
+  // Each card reports TCP data starting from channel 0 - but in the fp<N>.json
+  // we refer to each channel based on channel in the system. This tracks the
+  // offset between the channel in the system and the first channel on the card
+  channel_offset_ = channels[0];
+
+  // If we have marker channels enabled then add them first
+  if (marker_channels_enabled_) {
+    LOG4CXX_INFO(logger_, "Adding marker channels");
+    // Marker channels are always 3rd and 4th channel - so add based on offset
+    // in system as this gets subtracted when decoding TCP packets
+    channels.push_back(channel_offset_ + 2);
+    channels.push_back(channel_offset_ + 3);
+
+    // Track the marker channel numbers to give them different dataset names
+    marker_channels_ = std::vector<uint32_t>();
+    marker_channels_.push_back(channel_offset_ + 2);
+    marker_channels_.push_back(channel_offset_ + 3);
+  }
+
   channels_ = channels;
   num_channels_ = channels.size();
 
-  reset_channel_statistics();
+  LOG4CXX_INFO(logger_, "Configured for " << num_channels_ << " channels");
 
-  // TCP frames only report as channels 0 and 1 - we need to store
-  // the offset so we can report the correct system channels to the file
-  // writer
-  channel_offset_ = channels_[0];
+  reset_channel_statistics();
 
   // We must reallocate memory blocks
   setup_memory_allocation();
@@ -232,6 +270,14 @@ void X3X2ListModeProcessPlugin::flush_close_acquisition()
     // Mark acquisition as complete so we do not process any more data
     acquisition_complete_ = true;
 
+    for (auto const& chan : channels_)
+    {
+      LOG4CXX_INFO(
+        logger_,
+        "Total events in channel " << chan << ": " << num_events_[chan]
+      );
+    }
+
     this->notify_end_of_acquisition();
   }
   else
@@ -266,10 +312,27 @@ void X3X2ListModeProcessPlugin::set_frame_size(uint32_t num_events)
 void X3X2ListModeProcessPlugin::setup_channel_memory_blocks(uint32_t channel)
 {
   // Names for memory block frames
-  std::string timeframe_name = "ch" + std::to_string(channel) + "_time_frame";
-  std::string timestamp_name = "ch" + std::to_string(channel) + "_time_stamp";
-  std::string event_height_name = "ch" + std::to_string(channel) + "_event_height";
-  std::string reset_flag_name = "ch" + std::to_string(channel) + "_reset_flag";
+  std::string timeframe_name;
+  std::string timestamp_name;
+  std::string event_height_name;
+  std::string reset_flag_name;
+
+  // TODO: fix this logic
+  if (std::find(marker_channels_.begin(), marker_channels_.end(), channel) == marker_channels_.end()) {
+    timeframe_name = "ch" + std::to_string(channel) + "_time_frame";
+    timestamp_name = "ch" + std::to_string(channel) + "_time_stamp";
+    event_height_name = "ch" + std::to_string(channel) + "_event_height";
+    reset_flag_name = "ch" + std::to_string(channel) + "_reset_flag";
+  } else
+  {
+    // Use different dataset names for marker channels
+    uint32_t marker_num = channel - channel_offset_ - 2;
+    timeframe_name = "marker" + std::to_string(marker_num) + "_time_frame";
+    timestamp_name = "marker" + std::to_string(marker_num) + "_time_stamp";
+    event_height_name = "marker" + std::to_string(marker_num) + "_event_height";
+    reset_flag_name = "marker" + std::to_string(marker_num) + "_reset_flag";
+  }
+
 
   // Size of each memory block in bytes based on the number of events we want to
   // store in each frame
@@ -297,7 +360,6 @@ void X3X2ListModeProcessPlugin::setup_channel_memory_blocks(uint32_t channel)
     boost::shared_ptr<X3X2ListModeEventHeightMemoryBlock>(
       new X3X2ListModeEventHeightMemoryBlock(event_height_name)
     );
-  // TODO: testing smaller frame size in case it fixes missing events
   height_ptr->set_size(frame_size_eh_bytes);
   event_height_memory_ptrs_[channel] = height_ptr;
 
@@ -305,7 +367,6 @@ void X3X2ListModeProcessPlugin::setup_channel_memory_blocks(uint32_t channel)
     boost::shared_ptr<X3X2ListModeResetFlagMemoryBlock>(
       new X3X2ListModeResetFlagMemoryBlock(reset_flag_name)
     );
-  // TODO: testing smaller frame size in case it fixes missing events
   reset_ptr->set_size(frame_size_rf_bytes);
   reset_flag_memory_ptrs_[channel] = reset_ptr;
 
@@ -334,6 +395,8 @@ void X3X2ListModeProcessPlugin::reset_channel_statistics()
 
 void X3X2ListModeProcessPlugin::setup_memory_allocation()
 {
+  LOG4CXX_INFO(logger_, "Setting memory allocation for " << frame_size_events_ << " events");
+
   // First clear out the memory vectors emptying any blocks
   timeframe_memory_ptrs_.clear();
   timestamp_memory_ptrs_.clear();
@@ -543,13 +606,6 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
             {
               this->flush_close_acquisition();
               LOG4CXX_INFO(logger_, "Acquisition of " << num_time_frames_ << " frames completed for all channels");
-              for (auto const& chan : channels_)
-              {
-                LOG4CXX_INFO(
-                  logger_,
-                  "Total events in channel " << chan << ": " << num_events_[chan]
-                );
-              }
               return;
             }
           }

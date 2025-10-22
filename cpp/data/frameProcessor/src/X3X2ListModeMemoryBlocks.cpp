@@ -28,7 +28,7 @@ X3X2ListModeMemoryBlock::X3X2ListModeMemoryBlock(
 
   // Setup logging for the class
   logger_ = Logger::getLogger("FP.X3X2ListModeProcessPlugin");
-  LOG4CXX_INFO(logger_, "[" << name_ << "]" << "Created X3X2ListModeMemoryBlock");
+  LOG4CXX_INFO(logger_, "[" << name_ << "]" << " Created X3X2ListModeMemoryBlock");
 }
 
 X3X2ListModeMemoryBlock::~X3X2ListModeMemoryBlock()
@@ -113,7 +113,7 @@ boost::shared_ptr <Frame> X3X2ListModeMemoryBlock::flush()
 X3X2ListModeTimeframeMemoryBlock::X3X2ListModeTimeframeMemoryBlock(const std::string& name) :
     X3X2ListModeMemoryBlock(name, raw_64bit, 8)
 {
-  LOG4CXX_INFO(logger_, "[" << name_ << "]" << "Created X3X2ListModeTimeframeMemoryBlock");
+  LOG4CXX_INFO(logger_, "[" << name_ << "]" << " Created X3X2ListModeTimeframeMemoryBlock");
 }
 
 X3X2ListModeTimeframeMemoryBlock::~X3X2ListModeTimeframeMemoryBlock()
@@ -149,7 +149,7 @@ boost::shared_ptr <Frame> X3X2ListModeTimeframeMemoryBlock::add_timeframe(uint64
 X3X2ListModeTimestampMemoryBlock::X3X2ListModeTimestampMemoryBlock(const std::string& name) :
     X3X2ListModeMemoryBlock(name, raw_64bit, 8)
 {
-  LOG4CXX_INFO(logger_, "[" << name_ << "]" << "Created X3X2ListModeTimestampMemoryBlock");
+  LOG4CXX_INFO(logger_, "[" << name_ << "]" << " Created X3X2ListModeTimestampMemoryBlock");
 }
 
 X3X2ListModeTimestampMemoryBlock::~X3X2ListModeTimestampMemoryBlock()
@@ -185,7 +185,7 @@ boost::shared_ptr <Frame> X3X2ListModeTimestampMemoryBlock::add_timestamp(uint64
 X3X2ListModeEventHeightMemoryBlock::X3X2ListModeEventHeightMemoryBlock(const std::string& name) :
     X3X2ListModeMemoryBlock(name, raw_16bit, 2)
 {
-  LOG4CXX_INFO(logger_, "[" << name_ << "]" << "Created X3X2ListModeEventHeightMemoryBlock");
+  LOG4CXX_INFO(logger_, "[" << name_ << "]" << " Created X3X2ListModeEventHeightMemoryBlock");
 }
 
 X3X2ListModeEventHeightMemoryBlock::~X3X2ListModeEventHeightMemoryBlock()
@@ -220,7 +220,7 @@ boost::shared_ptr <Frame> X3X2ListModeEventHeightMemoryBlock::add_event_height(u
 X3X2ListModeResetFlagMemoryBlock::X3X2ListModeResetFlagMemoryBlock(const std::string& name) :
     X3X2ListModeMemoryBlock(name, raw_8bit, 1)
 {
-  LOG4CXX_INFO(logger_, "[" << name_ << "]" << "Created X3X2ListModeResetFlagMemoryBlock");
+  LOG4CXX_INFO(logger_, "[" << name_ << "]" << " Created X3X2ListModeResetFlagMemoryBlock");
 }
 
 X3X2ListModeResetFlagMemoryBlock::~X3X2ListModeResetFlagMemoryBlock()

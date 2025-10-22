@@ -382,6 +382,14 @@ int XspressDetector::restoreSettings()
     }
   }
 
+  // Configure marker channels
+  if (status == XSP_STATUS_OK){
+    status = detector_->setup_marker_channels();
+    if (status != XSP_STATUS_OK){
+      setErrorString(detector_->getErrorString());
+    }
+  }
+
   // Read existing SCA params
   if (status == XSP_STATUS_OK){
     status = readSCAParams();
