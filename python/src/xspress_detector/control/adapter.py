@@ -40,7 +40,9 @@ class XspressAdapter(AsyncApiAdapter):
             endpoint = self.options['endpoint']
             ip, port = endpoint.split(":")
             num_process = int(self.options["num_process"])
-            num_process_list = max(2,num_process-1) if num_process >=2 else 1
+            # For X3X2 the number of list mode processes is the same as in MCA mode
+            # TODO: handle with a config flag so we don't break compatibility with Xspress 4
+            num_process_list = num_process
             self.detector = XspressDetector(ip, port, num_process_mca=num_process, num_process_list=num_process_list)
             logging.info(f"instatiated XspressDetector with ip = {ip} and port {port}\n num_process/list = {num_process}/{num_process_list}")
 
@@ -88,7 +90,6 @@ class XspressAdapter(AsyncApiAdapter):
             if not isinstance(response, dict):
                 response = {"value": response}
 
-            respose = "{}".format(response)
             status_code = 200
         except LookupError as e:
             response = {'invalid path': str(e)}

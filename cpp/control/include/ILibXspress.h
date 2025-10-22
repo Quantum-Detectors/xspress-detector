@@ -155,6 +155,7 @@ public:
   virtual int histogram_continue(int card) = 0;
   virtual int histogram_pause(int card) = 0;
   virtual int histogram_stop(int card) = 0;
+  virtual int histogram_is_any_busy() = 0;
   virtual int string_trigger_mode_to_int(const std::string& mode) = 0;
   virtual int scaler_read(uint32_t *buffer,
                   uint32_t tf,
@@ -183,6 +184,10 @@ public:
   virtual int set_window(int chan, int sca, int llm, int hlm) = 0;
   virtual int set_sca_thresh(int chan, int value) = 0;
   virtual int set_trigger_input(bool list_mode) = 0;
+  virtual int setup_clocks(int num_cards) = 0;
+  virtual int enable_list_mode_resets() = 0;
+  virtual int set_channel_sources(int run_flags) = 0;
+  virtual int setup_marker_channels() = 0;
 
   static const int runFlag_MCA_SPECTRA_;
   static const int runFlag_SCALERS_ONLY_;

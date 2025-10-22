@@ -11,12 +11,12 @@ from functools import partial
 from datetime import datetime
 from contextlib import suppress
 from numbers import Number as number
+from typing import Any
 
 from odin.adapters.adapter import ApiAdapterRequest, ApiAdapter
 from odin_data.control.ipc_message import IpcMessage
 
 from .client import AsyncClient
-from .util import ListModeIPPortGen
 from .debug import debug_method
 from .parameter_tree import (
     WriteOnlyVirtualParameter,
@@ -47,7 +47,7 @@ XSPRESS_MODE_LIST = "list"
 XSPRESS_EXPOSURE_LOWER_LIMIT = 1.0 / 1000000
 XSPRESS_EXPOSURE_UPPER_LIMIT = 20.0
 
-NUM_FR_MCA = 9
+NUM_FR_MCA = 8
 NUM_FR_LIST = 8
 
 FR_INIT_TIME = {
@@ -773,12 +773,16 @@ class XspressDetector(object):
     def num_chan_per_process_list(self):
         """
         max_channels: in list mode is mca_channels+1.
-        For list mode the last process will sometimes have less 'active' channels, as each card has 10 chans (I believe).
+        For list mode the last process will sometimes have fewer 'active' channels, as each card has 10 chans (I believe).
         e.g. when mca_channels = 36 and list_channels = 37,
         then num_chan_per_process_list = 5 if num_process_list = 8,
         or num_chan_per_process_list = 40 if num_process_list = 1,
         """
-        return nearest_mult_of_5_up(self.mca_channels) // self.num_process_list
+        # For Xspress Mk2 we have the same number of of channels per process
+        # in list mode and MCA mode (i.e. 2 - 1 card per FR/FP pair).
+        # TODO: handle both Xspress 4 and X3X2 systems - probably by adding
+        # a configuration flag to say we are using a Mk2 system.
+        return self.num_chan_per_process_mca
 
     @property
     def num_chan_per_process_mca(self):
@@ -808,6 +812,7 @@ class XspressDetector(object):
         num_process = (
             self.num_process_mca if mode == XSPRESS_MODE_MCA else self.num_process_list
         )
+        logging.info(f"Configuring {num_process} processors for {mode} mode")
         # must copy otherwise we'll modify the same dict later
         configs = [copy.deepcopy(command) for _ in range(num_process)]
 
@@ -820,21 +825,48 @@ class XspressDetector(object):
         tasks = ()
         for client, config in zip(self.fp_clients, configs):
             tasks += (asyncio.create_task(self.async_send_task(client, config)),)
-        result = await asyncio.gather(*tasks)
+        await asyncio.gather(*tasks)
 
-    async def configure_frs(self, mode: int):
+    async def configure_frs(self, mode: str):
+        """Configure the frame receivers for the acquisition mode selected
+
+        MCA mode:
+
+        - the control server uses the Xspress library API to read the data
+          using multiple worker threads
+        - Each worker copies data using the Xspress library from the shared
+          memory into Odin buffers - both MCA data and scalars
+
+        List mode:
+
+        - for Xspress 4 the frame receivers connect to each of the UDP ports
+          (1 per channel) to get the list mode data
+        - for Xspress 3 Mini Mk 2 the frame receivers connect to each TCP port
+          (1 per ADC consisting of 2 channels and 2 markers) to get list mode
+          data
+
+        Args:
+            mode (str): Acquisition mode
+
+        Raises:
+            ValueError: raised if an invalid acquisition mode is selected
+        """
         if mode == XSPRESS_MODE_LIST:
+            # TODO: don't break compatibility with Xspress 4
+            #  - IP addresses and ports
+            #  - decoder plugin to use
+            # One ADC card per process pair (one TCP connection each)
+            ip_and_ports = [(f"192.168.0.{card_num+1}", [30125]) for card_num in range(1, self.num_cards+1)]
+            self.logger.info(f"Connecting to list mode sockets {ip_and_ports}")
             configs = [
                 {
                     "rx_ports": ",".join([str(p) for p in ports]),
-                    "rx_type": "udp",
-                    "decoder_type": "XspressListMode",
+                    "rx_type": "tcp",
+                    "decoder_type": "X3X2ListMode",
                     "rx_address": ip,
                     "rx_recv_buffer_size": 30000000,
                 }
-                for ip, ports in ListModeIPPortGen(
-                    self.num_chan_per_process_list, self.num_process_list
-                )
+                for ip, ports in ip_and_ports
             ]
         elif mode == XSPRESS_MODE_MCA:
             configs = [
@@ -870,14 +902,15 @@ class XspressDetector(object):
 
         # This seems to help when dealing with detectors that don't have 8 channels.
         # Apparently when the detector has a number of channels different from that defined in 'DEFAULT_MAX_CHANNELS',
-        # at XspressDetector.h, we have some problems when trying to connect to it straigh away using the reconfigure button.
+        # at XspressDetector.h, we have some problems when trying to connect to it straight away using the reconfigure button.
         await self.reset()
         await asyncio.sleep(FR_INIT_TIME[mode])
 
         resp = await self._async_client.send_recv(self.configuration.get())
         # resp = await self._put(MessageType.CONFIG, XspressDetectorStr.CONFIG_CONFIG_PATH, self.settings_paths[mode])
         resp = await self._put(MessageType.CMD, XspressDetectorStr.CMD_DISCONNECT, 1)
-        chans = self.mca_channels if mode == XSPRESS_MODE_MCA else self.mca_channels + 1
+        # TODO: don't break compatibility with Xspress 4
+        chans = self.mca_channels #  if mode == XSPRESS_MODE_MCA else self.mca_channels + 1
         await self._put(
             MessageType.CONFIG, XspressDetectorStr.CONFIG_MAX_CHANNELS, chans
         )
@@ -921,7 +954,7 @@ class XspressDetector(object):
     def _set(self, attr_name, value):
         setattr(self, attr_name, value)
 
-    async def _put(self, message_type: MessageType, config_str: str, value: any):
+    async def _put(self, message_type: MessageType, config_str: str, value: Any):
         self.logger.debug(debug_method())
         if not self._async_client.is_connected():
             raise ConnectionError(
@@ -949,6 +982,7 @@ class XspressDetector(object):
         self.logger.critical(debug_method())
         self.max_channels = max_channels
         self.mca_channels = max_channels
+        self.num_cards = num_cards
         self.max_spectra = max_spectra
         self.run_flags = run_flags
         self.fr_clients = [

@@ -3,21 +3,18 @@ Created on March 2022
 
 :author: Alan Greer
 """
-import json
 import logging
 import os
-import asyncio
-import time
 
 from odin_data.control.odin_data_adapter import OdinDataAdapter
-from odin_data.control.fp_compression_adapter import FPCompressionAdapter
+from odin_data.control.frame_processor_adapter import FrameProcessorAdapter
 from odin.adapters.adapter import (
     ApiAdapterResponse,
     request_types,
     response_types,
 )
 from tornado import escape
-from tornado.escape import json_encode, json_decode
+from tornado.escape import json_decode
 
 
 def bool_from_string(value):
@@ -27,7 +24,7 @@ def bool_from_string(value):
     return bool_value
 
 
-class FPXspressAdapter(FPCompressionAdapter):
+class FPXspressAdapter(FrameProcessorAdapter):
     """
     FPXspressAdapter class
 
@@ -114,7 +111,8 @@ class FPXspressAdapter(FPCompressionAdapter):
                         # The file path is the same for all clients
                         parameters = {
                             'hdf': {
-                                'frames': self._param['config/hdf/frames']
+                                # Zero for X3X2 list mode as processor ends acquisition
+                                'frames': 0
                             }
                         }
                         # Send the number of frames first
@@ -172,7 +170,10 @@ class FPXspressAdapter(FPCompressionAdapter):
                         "acq_id": self._param["config/hdf/acquisition_id"],
                         "chunks": int(self._batch_size),
                     },
-                    "xspress-list": {"reset": True},
+                    "xspress-list": {
+                        "reset": True,
+                        "time_frames": self._param["config/hdf/frames"],
+                    },
                 }
                 logging.warning("Sending: {}".format(parameters))
                 client.send_configuration(parameters)
@@ -206,4 +207,4 @@ class FPXspressAdapter(FPCompressionAdapter):
                     "config/hdf/dataset/data",
                     "config/hdf/dataset/{}".format(dataset) + "/{}".format(client),
                 )
-                super(FPCompressionAdapter.__base__, self).put(dataset_path, request)
+                super(FrameProcessorAdapter.__base__, self).put(dataset_path, request)

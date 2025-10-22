@@ -162,6 +162,7 @@ public:
   int histogram_continue(int card);
   int histogram_pause(int card);
   int histogram_stop(int card);
+  int histogram_is_any_busy();
   int string_trigger_mode_to_int(const std::string& mode);
   int scaler_read(uint32_t *buffer,
                   uint32_t tf,
@@ -190,6 +191,10 @@ public:
   int set_window(int chan, int sca, int llm, int hlm);
   int set_sca_thresh(int chan, int value);
   int set_trigger_input(bool list_mode);
+  int setup_clocks(int num_cards);
+  int enable_list_mode_resets();
+  int set_channel_sources(int run_flags);
+  int setup_marker_channels();
 
   static const int runFlag_MCA_SPECTRA_;
   static const int runFlag_SCALERS_ONLY_;

@@ -24,6 +24,7 @@ XspressDetector::XspressDetector(bool simulation) :
     logger_(log4cxx::Logger::getLogger("Xspress.XspressDetector")),
     simulated_(simulation),
     connected_(false),
+    acquiring_(false),
     reconnect_required_(false),
     acq_failed_(false),
     xsp_num_cards_(0),
@@ -211,6 +212,48 @@ int XspressDetector::setupChannels()
   return status;
 }
 
+int XspressDetector::setupClocks()
+{
+  int status = XSP_STATUS_OK;
+  if (checkConnected()){
+    status = detector_->setup_clocks(xsp_num_cards_);
+    if (status != XSP_STATUS_OK)
+    {
+      setErrorString("Failed to configure card clocks");
+    }
+  } else {
+    LOG4CXX_INFO(logger_, "Cannot set up clocks as not connected");
+    status = XSP_STATUS_ERROR;
+  }
+  return status;
+}
+
+/**
+ * @brief Set up the control register values
+ *
+ * - Enables resets if using X3X2 list mode
+ *
+ * @return int Whether we are successful
+ */
+int XspressDetector::setupControlRegister()
+{
+  int status = XSP_STATUS_OK;
+  if (checkConnected()){
+    if (xsp_mode_ == XSP_MODE_LIST)
+    {
+      status = detector_->enable_list_mode_resets();
+      if (status != XSP_STATUS_OK)
+      {
+        setErrorString("Failed to configure list mode resets");
+      }
+    }
+  } else {
+    LOG4CXX_INFO(logger_, "Cannot set up control register as not connected");
+    status = XSP_STATUS_ERROR;
+  }
+  return status;
+}
+
 int XspressDetector::enableDAQ()
 {
   int status = XSP_STATUS_OK;
@@ -326,6 +369,22 @@ int XspressDetector::restoreSettings()
   // Apply run flags parameter
   if (status == XSP_STATUS_OK){
     status = detector_->set_run_flags(xsp_run_flags_);
+    if (status != XSP_STATUS_OK){
+      setErrorString(detector_->getErrorString());
+    }
+  }
+
+  // Setup channel data sources
+  if (status == XSP_STATUS_OK){
+    status = detector_->set_channel_sources(xsp_run_flags_);
+    if (status != XSP_STATUS_OK){
+      setErrorString(detector_->getErrorString());
+    }
+  }
+
+  // Configure marker channels
+  if (status == XSP_STATUS_OK){
+    status = detector_->setup_marker_channels();
     if (status != XSP_STATUS_OK){
       setErrorString(detector_->getErrorString());
     }
@@ -537,6 +596,9 @@ int XspressDetector::stopAcquisition()
       }
     }
     status = detector_->histogram_stop(-1);
+
+    // We can return to idle immediately after stopping hist in list mode
+    if (xsp_mode_ == XSP_MODE_LIST) acquiring_ = false;
   }
   return status;
 }
@@ -545,6 +607,7 @@ int XspressDetector::sendSoftwareTrigger()
 {
   int status = XSP_STATUS_OK;
   if (acquiring_){
+    // TODO: BEN: handle what happens in list mode if required
     if (xsp_trigger_mode_ == TM_SOFTWARE){
       status = detector_->histogram_continue(0);
       status |= detector_->histogram_pause(0);
