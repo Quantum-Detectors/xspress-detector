@@ -47,7 +47,7 @@ class XspressAdapter(AsyncApiAdapter):
             # Whether we are using the TCP relay server to fan out the X3X2 list mode
             # traffic
             if "list_mode_tcp_relay" in self.options:
-                use_tcp_relay_server = bool(self.options["list_mode_tcp_relay"])
+                use_tcp_relay_server = bool(int(self.options["list_mode_tcp_relay"]))
             else:
                 use_tcp_relay_server = False
 
@@ -58,7 +58,11 @@ class XspressAdapter(AsyncApiAdapter):
                 num_process_list=num_process_list,
                 use_tcp_relay_server=use_tcp_relay_server
             )
-            logging.info(f"instatiated XspressDetector with ip = {ip} and port {port}\n num_process/list = {num_process}/{num_process_list}")
+            logging.info(
+                f"instatiated XspressDetector with ip = {ip} and port {port}\n "
+                f"num_process/list = {num_process}/{num_process_list}\n "
+                f"TCP relay server: {use_tcp_relay_server}"
+            )
 
             num_cards = int(self.options['num_cards'])
             num_tf = int(self.options["num_tf"])
