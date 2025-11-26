@@ -63,4 +63,4 @@ def get_x3x2_list_mode_addresses(num_cards: int, use_tcp_relay: bool) -> List[Tu
     if not use_tcp_relay:
         return [(f"192.168.0.{card_num+1}", [30125]) for card_num in range(1, num_cards+1)]
     else:
-        return [("127.0.0.1", [13001 + card_num]) for card_num in range(1, num_cards+1)]
+        return [("127.0.0.1", [13000 + card_num]) for card_num in range(1, num_cards+1)]
