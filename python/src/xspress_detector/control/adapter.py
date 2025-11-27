@@ -43,8 +43,26 @@ class XspressAdapter(AsyncApiAdapter):
             # For X3X2 the number of list mode processes is the same as in MCA mode
             # TODO: handle with a config flag so we don't break compatibility with Xspress 4
             num_process_list = num_process
-            self.detector = XspressDetector(ip, port, num_process_mca=num_process, num_process_list=num_process_list)
-            logging.info(f"instatiated XspressDetector with ip = {ip} and port {port}\n num_process/list = {num_process}/{num_process_list}")
+
+            # Whether we are using the TCP relay server to fan out the X3X2 list mode
+            # traffic
+            if "list_mode_tcp_relay" in self.options:
+                use_tcp_relay_server = bool(int(self.options["list_mode_tcp_relay"]))
+            else:
+                use_tcp_relay_server = False
+
+            self.detector = XspressDetector(
+                ip,
+                port,
+                num_process_mca=num_process,
+                num_process_list=num_process_list,
+                use_tcp_relay_server=use_tcp_relay_server
+            )
+            logging.info(
+                f"instatiated XspressDetector with ip = {ip} and port {port}\n "
+                f"num_process/list = {num_process}/{num_process_list}\n "
+                f"TCP relay server: {use_tcp_relay_server}"
+            )
 
             num_cards = int(self.options['num_cards'])
             num_tf = int(self.options["num_tf"])

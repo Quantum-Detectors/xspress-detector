@@ -1,3 +1,4 @@
+from typing import Tuple, List
 
 class ListModeIPPortGen:
     IP_PREFIX = "192.168.0."
@@ -44,3 +45,22 @@ class ListModeIPPortGen:
             self.ip_last += self.IP_STEP
         self.current_count =  self.current_count % self.NUM_PORTS_PER_IP
         return ip, ports
+
+def get_x3x2_list_mode_addresses(num_cards: int, use_tcp_relay: bool) -> List[Tuple[str, List[int]]]:
+    """Get the list of addresses for the frame receivers to connect to for X3X2 list mode
+
+    This will return the addresses of the Xspress cards if connecting directly or the
+    addresses of the TCP relay server applications (1 per card).
+
+    Args:
+        num_cards (int): Number of cards in the Xspress system
+        use_tcp_relay (bool): False to connect directly to Xspress or True
+                              to connect to the TCP relay application
+
+    Returns:
+        List[Tuple[str, List[int]]]: List of addresses as [(ip, [port]),...]
+    """
+    if not use_tcp_relay:
+        return [(f"192.168.0.{card_num+1}", [30125]) for card_num in range(1, num_cards+1)]
+    else:
+        return [("127.0.0.1", [13000 + card_num]) for card_num in range(1, num_cards+1)]

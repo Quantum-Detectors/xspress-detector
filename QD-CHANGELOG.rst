@@ -3,10 +3,26 @@ Change log
 
 Changes made by Quantum Detectors to this repository are recorded below.
 
-0.5.0+qd0.6
------------ 
+
+0.5.0+qd0.7
+-----------
 
 Added:
+
+- Added optional config option `list_mode_tcp_relay` to the Xspress adapter in
+  odin_server.cfg to support using the TCP relay server to get list mode data.
+  If set to 1, then the frame receivers will be told to connect to the TCP
+  relay server. If set to 0 or not present then they will connect directly to
+  the Xspress system ports as before. The TCP relay server should be running
+  on the same system starting from port 13001 for the first card's connection,
+  incrementing by one for each card.
+
+
+0.5.0+qd0.6
+-----------
+
+Added:
+
 - Muxing for the TTL inputs which with the 0.7.1 pyxspress release of configuration files
   allows TTL in 0 and TTL in 1 to be recorded in the dataset.
 

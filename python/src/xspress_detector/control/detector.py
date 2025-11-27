@@ -16,6 +16,8 @@ from typing import Any
 from odin.adapters.adapter import ApiAdapterRequest, ApiAdapter
 from odin_data.control.ipc_message import IpcMessage
 
+from xspress_detector.control.util import get_x3x2_list_mode_addresses
+
 from .client import AsyncClient
 from .debug import debug_method
 from .parameter_tree import (
@@ -322,6 +324,7 @@ class XspressDetector(object):
         debug_level=logging.INFO,
         num_process_mca=NUM_FR_MCA,
         num_process_list=NUM_FR_LIST,
+        use_tcp_relay_server=False,
     ):
         self.logger = logging.getLogger()
         self.logger.setLevel(debug_level)
@@ -338,6 +341,10 @@ class XspressDetector(object):
         # process params
         self.num_process_list = num_process_list
         self.num_process_mca = num_process_mca
+
+        # Whether we are using a TCP relay server to fan out the Xspress TCP
+        # data when in list mode
+        self.use_tcp_relay_server = use_tcp_relay_server
 
         # root level parameter tree members
         self.ctr_endpoint = ENDPOINT_TEMPLATE.format(ip, port)
@@ -856,7 +863,7 @@ class XspressDetector(object):
             #  - IP addresses and ports
             #  - decoder plugin to use
             # One ADC card per process pair (one TCP connection each)
-            ip_and_ports = [(f"192.168.0.{card_num+1}", [30125]) for card_num in range(1, self.num_cards+1)]
+            ip_and_ports = get_x3x2_list_mode_addresses(self.num_cards, self.use_tcp_relay_server)
             self.logger.info(f"Connecting to list mode sockets {ip_and_ports}")
             configs = [
                 {
