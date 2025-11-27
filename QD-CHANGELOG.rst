@@ -13,7 +13,9 @@ Added:
   odin_server.cfg to support using the TCP relay server to get list mode data.
   If set to 1, then the frame receivers will be told to connect to the TCP
   relay server. If set to 0 or not present then they will connect directly to
-  the Xspress system ports as before.
+  the Xspress system ports as before. The TCP relay server should be running
+  on the same system starting from port 13001 for the first card's connection,
+  incrementing by one for each card.
 
 
 0.5.0+qd0.6
