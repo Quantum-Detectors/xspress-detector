@@ -1255,6 +1255,10 @@ bool XspressDetector::getXspAcquiring()
         }
       }
     }
+    else if (xsp_mode_ == XSP_MODE_LIST)
+    {
+      // TOOD: check if the Xspress system is acquiring
+    }
   }
   // The second job is to return the acquiring state
   return acquiring_;

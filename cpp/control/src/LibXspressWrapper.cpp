@@ -909,6 +909,8 @@ int LibXspressWrapper::get_current_tf(u_int32_t *current_tf)
   u_int32_t lowest_tf = std::numeric_limits<u_int32_t>::max();
   u_int32_t time_reg = 0;
   u_int32_t tf = 0;
+  bool finished = false;
+
   for (int card = 0; card < num_cards; card++)
   {
     // Get the TF progress for the card
@@ -918,16 +920,22 @@ int LibXspressWrapper::get_current_tf(u_int32_t *current_tf)
       return XSP_STATUS_ERROR;
     }
     tf = XSP3_GLOB_TSTAT_A_FRAME(time_reg);
+    // Only seems to track on first card - presumably as master
+    if (card == 0) finished = XSP3_GLOB_TSTAT_A_ITFG_FINISHED(time_reg);
+
+    // TODO: remove when done
     LOG4CXX_INFO(logger_, "Card " << card << " TF: " << tf);
 
     // Track the card with the least progress
     if (tf < lowest_tf) lowest_tf = tf;
   }
 
-  // Set the lowest value found
+  // Set the lowest value found, and add one if first card complete
+  if (finished) lowest_tf += 1;
   *current_tf = lowest_tf;
 
-  LOG4CXX_INFO(logger_, "Current TF " << current_tf << " Lowest TF: " << lowest_tf);
+  // TODO: remove when done
+  LOG4CXX_INFO(logger_, "Lowest TF: " << lowest_tf << "Finished: " << finished);
 
   return XSP_STATUS_OK;
 }
