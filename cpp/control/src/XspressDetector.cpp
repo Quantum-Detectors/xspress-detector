@@ -1278,7 +1278,8 @@ uint32_t XspressDetector::getXspFramesRead()
   if (daq_){
     frames = daq_->getFramesRead();
   }
-  else
+  // Otherwise check if we are in list mode
+  else if (xsp_mode_ == XSP_MODE_LIST)
   {
     int status = detector_->get_current_tf(&frames);
     LOG4CXX_INFO(logger_, "Getting " << frames << " frames read for list mode");

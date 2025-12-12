@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include "dirent.h"
 #include <iostream>
+#include <limits>
 
 #include "LibXspressWrapper.h"
 #include "DebugLevelLogger.h"
@@ -905,7 +906,7 @@ int LibXspressWrapper::get_current_tf(u_int32_t *current_tf)
   }
 
   int xsp_status;
-  u_int32_t lowest_tf = 0;
+  u_int32_t lowest_tf = std::numeric_limits<u_int32_t>::max();
   u_int32_t time_reg = 0;
   u_int32_t tf = 0;
   for (int card = 0; card < num_cards; card++)
@@ -925,6 +926,8 @@ int LibXspressWrapper::get_current_tf(u_int32_t *current_tf)
 
   // Set the lowest value found
   *current_tf = lowest_tf;
+
+  LOG4CXX_INFO(logger_, "Current TF " << current_tf << " Lowest TF: " << lowest_tf);
 
   return XSP_STATUS_OK;
 }
