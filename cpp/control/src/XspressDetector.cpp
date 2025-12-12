@@ -1273,10 +1273,17 @@ void XspressDetector::resetXspAcqFailed()
 uint32_t XspressDetector::getXspFramesRead()
 {
   uint32_t frames = 0;
+
   // If DAQ exists return the counter from that object.
   if (daq_){
     frames = daq_->getFramesRead();
   }
+  else
+  {
+    int status = detector_->get_current_tf(&frames);
+    LOG4CXX_INFO(logger_, "Getting " << frames << " frames read for list mode");
+  }
+
   return frames;
 }
 

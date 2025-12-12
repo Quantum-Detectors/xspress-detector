@@ -876,6 +876,59 @@ int LibXspressWrapper::get_num_frames_read(int32_t *frames)
   return status;
 }
 
+/**
+ * @brief Get the current time frame of the Xspress system
+ * 
+ * Unlike get_num_frames_read this tracks the time frame of the Xspress system
+ * rather than how many frames have been read into shared memory.
+ * 
+ * This is used for list mode where the Xspress library doesn't receive the list
+ * mode data - instead the Odin frame receivers connect directly.
+ * 
+ * This returns the lowest time frame returned by the Xspress cards as reported
+ * by xsp3_get_glob_time_statA. 24 bits are used by this value so we can report
+ * up to 2**24 - 1 = 16,777,215 time frames.
+ * 
+ * @param current_tf Current time frame
+ * @return int Status code
+ */
+int LibXspressWrapper::get_current_tf(u_int32_t *current_tf)
+{
+  LOG4CXX_DEBUG_LEVEL(1, logger_, "Getting current TF");
+
+  // Need to enable each channel individually to preserve the current control register value
+  int num_cards = xsp3_get_num_cards(xsp_handle_);
+  if (num_cards < 0)
+  {
+    checkErrorCode("Error getting number of cards to get current TF", num_cards);
+    return XSP_STATUS_ERROR;
+  }
+
+  int xsp_status;
+  u_int32_t lowest_tf = 0;
+  u_int32_t time_reg = 0;
+  u_int32_t tf = 0;
+  for (int card = 0; card < num_cards; card++)
+  {
+    // Get the TF progress for the card
+    xsp_status = xsp3_get_glob_time_statA(xsp_handle_, card, &time_reg);
+    if (xsp_status < 0) {
+      checkErrorCode("Error getting glob_time_statA for time frame progress", xsp_status);
+      return XSP_STATUS_ERROR;
+    }
+    tf = XSP3_GLOB_TSTAT_A_FRAME(time_reg);
+    LOG4CXX_INFO(logger_, "Card " << card << " TF: " << tf);
+
+    // Track the card with the least progress
+    if (tf < lowest_tf) lowest_tf = tf;
+  }
+
+  // Set the lowest value found
+  *current_tf = lowest_tf;
+
+  return XSP_STATUS_OK;
+}
+
 int LibXspressWrapper::get_num_scalars(uint32_t *num_scalars)
 {
   *num_scalars = XSP3_SW_NUM_SCALERS;

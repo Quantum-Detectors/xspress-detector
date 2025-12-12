@@ -152,6 +152,7 @@ public:
                      int invert_f0,
                      int invert_veto);
   int get_num_frames_read(int32_t *frames);
+  int get_current_tf(u_int32_t *current_tf);
   int get_num_scalars(uint32_t *num_scalars);
   int histogram_circ_ack(int channel,
                          uint32_t frame_number,
