@@ -911,6 +911,11 @@ int LibXspressWrapper::get_current_tf(u_int32_t *current_tf)
   u_int32_t tf = 0;
   bool finished = false;
 
+  // TODO: remove when done
+  bool itfg_counting = false;
+  bool itfg_running = false;
+  bool itfg_paused = false;
+
   for (int card = 0; card < num_cards; card++)
   {
     // Get the TF progress for the card
@@ -924,7 +929,17 @@ int LibXspressWrapper::get_current_tf(u_int32_t *current_tf)
     if (card == 0) finished = XSP3_GLOB_TSTAT_A_ITFG_FINISHED(time_reg);
 
     // TODO: remove when done
-    LOG4CXX_INFO(logger_, "Card " << card << " TF: " << tf);
+    itfg_counting = XSP3_GLOB_TSTAT_A_ITFG_COUNTING(time_reg);
+    itfg_running = XSP3_GLOB_TSTAT_A_ITFG_RUNNING(time_reg);
+    itfg_paused = XSP3_GLOB_TSTAT_A_ITFG_PAUSED(time_reg);
+    LOG4CXX_INFO(
+      logger_,
+      "Card " << card
+      << " TF: " << tf
+      << ", C: " << itfg_counting
+      << ", R: " << itfg_running
+      << ", P: " << itfg_paused
+    );
 
     // Track the card with the least progress
     if (tf < lowest_tf) lowest_tf = tf;
@@ -948,13 +963,13 @@ int LibXspressWrapper::get_current_tf(u_int32_t *current_tf)
  */
 int LibXspressWrapper::is_itfg_running(bool *itfg_running)
 {
-  LOG4CXX_DEBUG_LEVEL(1, logger_, "Getting current TF");
+  LOG4CXX_DEBUG_LEVEL(1, logger_, "Checking if ITFG is running");
 
   // Need to enable each channel individually to preserve the current control register value
   int num_cards = xsp3_get_num_cards(xsp_handle_);
   if (num_cards < 0)
   {
-    checkErrorCode("Error getting number of cards to get current TF", num_cards);
+    checkErrorCode("Error getting number of cards to check if ITFG running", num_cards);
     return XSP_STATUS_ERROR;
   }
 
@@ -968,7 +983,7 @@ int LibXspressWrapper::is_itfg_running(bool *itfg_running)
     // Get the TF progress for the card
     xsp_status = xsp3_get_glob_time_statA(xsp_handle_, card, &time_reg);
     if (xsp_status < 0) {
-      checkErrorCode("Error getting glob_time_statA for time frame progress", xsp_status);
+      checkErrorCode("Error getting glob_time_statA to check if running", xsp_status);
       return XSP_STATUS_ERROR;
     }
     card_running = XSP3_GLOB_TSTAT_A_ITFG_RUNNING(time_reg);
@@ -984,6 +999,37 @@ int LibXspressWrapper::is_itfg_running(bool *itfg_running)
   LOG4CXX_INFO(logger_, "Running: " << running);
   *itfg_running = running;
 
+  return XSP_STATUS_OK;
+}
+
+/**
+ * @brief Get whether the ITFG is waiting for trigger
+ * 
+ * Used when in software mode to correct the number of
+ * time frames completed
+ * 
+ * @param[out] itfg_waiting Whether ITFG is waiting for trigger
+ * @return int Status code
+ */
+int LibXspressWrapper::is_itfg_waiting_for_trigger(bool *itfg_waiting)
+{
+  LOG4CXX_DEBUG_LEVEL(1, logger_, "Checking if ITFG is waiting for trigger");
+
+  // Only need to check first card
+  u_int32_t time_reg = 0;
+  int xsp_status = xsp3_get_glob_time_statA(xsp_handle_, 0, &time_reg);
+  if (xsp_status < XSP3_OK) {
+    checkErrorCode("Checking ITFG is waiting", xsp_status);
+    return XSP_STATUS_ERROR;
+  }
+
+  bool paused = XSP3_GLOB_TSTAT_A_ITFG_PAUSED(time_reg);
+  bool running = XSP3_GLOB_TSTAT_A_ITFG_RUNNING(time_reg);
+
+  if (paused && running) *itfg_waiting = true;
+  else *itfg_waiting = false;
+
+  LOG4CXX_INFO(logger_, "Waiting: " << itfg_waiting);
   return XSP_STATUS_OK;
 }
 

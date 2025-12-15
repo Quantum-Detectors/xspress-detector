@@ -265,6 +265,10 @@ private:
   /** StartAcquisition mutex for locking */
   boost::mutex                  start_acq_mutex_;
 
+  /** Used to track number of frames when using software triggers in list mode */
+  bool                          first_software_trigger_sent_;
+  bool                          manually_stopped_waiting_for_trigger_;
+
 };
 
 } /* namespace Xspress */

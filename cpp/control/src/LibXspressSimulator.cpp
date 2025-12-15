@@ -638,6 +638,21 @@ int LibXspressSimulator::is_itfg_running(bool *itfg_running)
   return XSP_STATUS_OK;
 }
 
+/**
+ * @brief Get whether the ITFG is waiting for trigger
+ * 
+ * Used when in software mode to correct the number of
+ * time frames completed
+ * 
+ * @param[out] itfg_waiting Whether ITFG is waiting for trigger
+ * @return int Status code
+ */
+int LibXspressSimulator::is_itfg_waiting_for_trigger(bool *itfg_waiting)
+{
+  // Shouldn't need to correct in simulation mode?
+  *itfg_waiting = false;
+  return XSP_STATUS_OK;
+}
 
 int LibXspressSimulator::get_num_scalars(uint32_t *num_scalars)
 {
