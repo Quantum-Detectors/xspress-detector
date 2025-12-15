@@ -1257,7 +1257,10 @@ bool XspressDetector::getXspAcquiring()
     }
     else if (xsp_mode_ == XSP_MODE_LIST)
     {
-      // TOOD: check if the Xspress system is acquiring
+      // TODO: check if this works with external triggers
+      bool running;
+      int status = detector_->is_itfg_running(&running);
+      if (!running) acquiring_ = false;
     }
   }
   // The second job is to return the acquiring state

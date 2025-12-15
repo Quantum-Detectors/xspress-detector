@@ -625,6 +625,20 @@ int LibXspressSimulator::get_current_tf(u_int32_t *current_tf)
   return status;
 }
 
+
+/**
+ * @brief Get whether the ITFG is running
+ * 
+ * @param[out] itfg_running Whether ITFG is running or not
+ * @return int Status code
+ */
+int LibXspressSimulator::is_itfg_running(bool *itfg_running)
+{
+  *itfg_running = acquisition_state_;
+  return XSP_STATUS_OK;
+}
+
+
 int LibXspressSimulator::get_num_scalars(uint32_t *num_scalars)
 {
   *num_scalars = XSP3_SW_NUM_SCALERS;

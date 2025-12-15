@@ -890,7 +890,7 @@ int LibXspressWrapper::get_num_frames_read(int32_t *frames)
  * by xsp3_get_glob_time_statA. 24 bits are used by this value so we can report
  * up to 2**24 - 1 = 16,777,215 time frames.
  * 
- * @param current_tf Current time frame
+ * @param[out] current_tf Current time frame
  * @return int Status code
  */
 int LibXspressWrapper::get_current_tf(u_int32_t *current_tf)
@@ -936,6 +936,53 @@ int LibXspressWrapper::get_current_tf(u_int32_t *current_tf)
 
   // TODO: remove when done
   LOG4CXX_INFO(logger_, "Lowest TF: " << lowest_tf << "Finished: " << finished);
+
+  return XSP_STATUS_OK;
+}
+
+/**
+ * @brief Get whether the ITFG is running
+ * 
+ * @param[out] itfg_running Whether ITFG is running or not
+ * @return int Status code
+ */
+int LibXspressWrapper::is_itfg_running(bool *itfg_running)
+{
+  LOG4CXX_DEBUG_LEVEL(1, logger_, "Getting current TF");
+
+  // Need to enable each channel individually to preserve the current control register value
+  int num_cards = xsp3_get_num_cards(xsp_handle_);
+  if (num_cards < 0)
+  {
+    checkErrorCode("Error getting number of cards to get current TF", num_cards);
+    return XSP_STATUS_ERROR;
+  }
+
+  int xsp_status;
+  u_int32_t time_reg = 0;
+  bool running = false;
+  bool card_running = false;
+
+  for (int card = 0; card < num_cards; card++)
+  {
+    // Get the TF progress for the card
+    xsp_status = xsp3_get_glob_time_statA(xsp_handle_, card, &time_reg);
+    if (xsp_status < 0) {
+      checkErrorCode("Error getting glob_time_statA for time frame progress", xsp_status);
+      return XSP_STATUS_ERROR;
+    }
+    card_running = XSP3_GLOB_TSTAT_A_ITFG_RUNNING(time_reg);
+
+    // TODO: remove when done
+    LOG4CXX_INFO(logger_, "Card " << card << " running: " << card_running);
+
+    // If any are running, then we are running
+    running |= card_running;
+  }
+
+  // TODO: remove when done
+  LOG4CXX_INFO(logger_, "Running: " << running);
+  *itfg_running = running;
 
   return XSP_STATUS_OK;
 }
