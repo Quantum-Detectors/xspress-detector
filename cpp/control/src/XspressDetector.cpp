@@ -1267,9 +1267,11 @@ bool XspressDetector::getXspAcquiring()
         }
       }
     }
-    else if (xsp_mode_ == XSP_MODE_LIST)
+    else if (xsp_mode_ == XSP_MODE_LIST && using_itfg())
     {
-      // TODO: check if this works with external triggers
+      LOG4CXX_INFO(logger_, "Using ITFG status to check if running");
+      // This only works if the ITFG is running - i.e. not using a gated
+      // hardware trigger or software start/stop
       bool running;
       int status = detector_->is_itfg_running(&running);
       if (!running) acquiring_ = false;
@@ -1374,6 +1376,33 @@ std::vector<int32_t> XspressDetector::getChannelsConnected()
 std::vector<bool> XspressDetector::getCardsConnected()
 {
   return cards_connected_;
+}
+
+/**
+ * @brief Returns whether the acquisition will be using the ITFG
+ * 
+ * This is based on the trigger mode. The ITFG is used if the Xspress
+ * frames are internally-timed.
+ * 
+ * This will be false if we are using hardware-gated triggers or software
+ * start/stop.
+ * 
+ * @return true The ITFG will be used in an acquisition
+ * @return false The ITFG will not be used
+ */
+bool XspressDetector::using_itfg()
+{
+  switch(xsp_trigger_mode_)
+  {
+    case TM_TTL_VETO_ONLY:
+    case TM_TTL_BOTH:
+    case TM_LVDS_VETO_ONLY:
+    case TM_LVDS_BOTH:
+    case TM_SOFTWARE_START_STOP:
+      return false;
+    default:
+      return true;
+  }
 }
 
 } /* namespace Xspress */

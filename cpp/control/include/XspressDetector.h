@@ -157,6 +157,8 @@ public:
   std::vector<bool> getCardsConnected();
   
 private:
+  bool using_itfg();
+
   /** libxspress wrapper object */
   boost::shared_ptr<ILibXspress>  detector_;
   /** Pointer to DAQ object */
