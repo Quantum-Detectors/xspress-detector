@@ -1269,7 +1269,6 @@ bool XspressDetector::getXspAcquiring()
     }
     else if (xsp_mode_ == XSP_MODE_LIST && using_itfg())
     {
-      LOG4CXX_INFO(logger_, "Using ITFG status to check if running");
       // This only works if the ITFG is running - i.e. not using a gated
       // hardware trigger or software start/stop
       bool running;
@@ -1310,8 +1309,7 @@ uint32_t XspressDetector::getXspFramesRead()
       if (acquiring_)
       {
         // The reported TF is always 1 less when the system
-        // is waiting for a software trigger, except for the very
-        // first trigger
+        // is waiting for a software trigger (except for the first one)
         bool waiting;
         detector_->is_itfg_waiting_for_trigger(&waiting);
         if (waiting) frames++;
@@ -1322,7 +1320,6 @@ uint32_t XspressDetector::getXspFramesRead()
         if (manually_stopped_waiting_for_trigger_) frames++;
       }
     }
-    LOG4CXX_INFO(logger_, "Getting " << frames << " frames read for list mode");
   }
 
   return frames;

@@ -895,7 +895,7 @@ int LibXspressWrapper::get_num_frames_read(int32_t *frames)
  */
 int LibXspressWrapper::get_current_tf(u_int32_t *current_tf)
 {
-  LOG4CXX_DEBUG_LEVEL(1, logger_, "Getting current TF");
+  // LOG4CXX_DEBUG_LEVEL(1, logger_, "Getting current TF");
 
   // Need to enable each channel individually to preserve the current control register value
   int num_cards = xsp3_get_num_cards(xsp_handle_);
@@ -911,11 +911,6 @@ int LibXspressWrapper::get_current_tf(u_int32_t *current_tf)
   u_int32_t tf = 0;
   bool finished = false;
 
-  // TODO: remove when done
-  bool itfg_counting = false;
-  bool itfg_running = false;
-  bool itfg_paused = false;
-
   for (int card = 0; card < num_cards; card++)
   {
     // Get the TF progress for the card
@@ -925,21 +920,8 @@ int LibXspressWrapper::get_current_tf(u_int32_t *current_tf)
       return XSP_STATUS_ERROR;
     }
     tf = XSP3_GLOB_TSTAT_A_FRAME(time_reg);
-    // Only seems to track on first card - presumably as master
+    // Check if the first card has completed
     if (card == 0) finished = XSP3_GLOB_TSTAT_A_ITFG_FINISHED(time_reg);
-
-    // TODO: remove when done
-    itfg_counting = XSP3_GLOB_TSTAT_A_ITFG_COUNTING(time_reg);
-    itfg_running = XSP3_GLOB_TSTAT_A_ITFG_RUNNING(time_reg);
-    itfg_paused = XSP3_GLOB_TSTAT_A_ITFG_PAUSED(time_reg);
-    LOG4CXX_INFO(
-      logger_,
-      "Card " << card
-      << " TF: " << tf
-      << ", C: " << itfg_counting
-      << ", R: " << itfg_running
-      << ", P: " << itfg_paused
-    );
 
     // Track the card with the least progress
     if (tf < lowest_tf) lowest_tf = tf;
@@ -948,9 +930,6 @@ int LibXspressWrapper::get_current_tf(u_int32_t *current_tf)
   // Set the lowest value found, and add one if first card complete
   if (finished) lowest_tf += 1;
   *current_tf = lowest_tf;
-
-  // TODO: remove when done
-  LOG4CXX_INFO(logger_, "Lowest TF: " << lowest_tf << "Finished: " << finished);
 
   return XSP_STATUS_OK;
 }
@@ -963,7 +942,7 @@ int LibXspressWrapper::get_current_tf(u_int32_t *current_tf)
  */
 int LibXspressWrapper::is_itfg_running(bool *itfg_running)
 {
-  LOG4CXX_DEBUG_LEVEL(1, logger_, "Checking if ITFG is running");
+  // LOG4CXX_DEBUG_LEVEL(1, logger_, "Checking if ITFG is running");
 
   // Need to enable each channel individually to preserve the current control register value
   int num_cards = xsp3_get_num_cards(xsp_handle_);
@@ -988,17 +967,11 @@ int LibXspressWrapper::is_itfg_running(bool *itfg_running)
     }
     card_running = XSP3_GLOB_TSTAT_A_ITFG_RUNNING(time_reg);
 
-    // TODO: remove when done
-    LOG4CXX_INFO(logger_, "Card " << card << " running: " << card_running);
-
     // If any are running, then we are running
     running |= card_running;
   }
 
-  // TODO: remove when done
-  LOG4CXX_INFO(logger_, "Running: " << running);
   *itfg_running = running;
-
   return XSP_STATUS_OK;
 }
 
@@ -1556,12 +1529,9 @@ int LibXspressWrapper::set_channel_sources(int run_flags)
 int LibXspressWrapper::setup_marker_channels()
 {
   LOG4CXX_INFO(logger_, "Configuring marker channels");
-  // TODO: ensure that changing the trigger mode does not override
-  // these settings - e.g. listening to rise and fall doesn't
-  // advance time frame twice
 
   // Apply for each channel
-  int num_marker_chans = 2; // TODO: find out if we can query this
+  int num_marker_chans = 2;
   int status = XSP_STATUS_OK;
   int xsp_status;
   u_int32_t chan_cont = 0;
@@ -1578,9 +1548,8 @@ int LibXspressWrapper::setup_marker_channels()
     chan_cont &= ~XSP3_CC_SEL_DATA(0xFF);
     if (chan % 2 == 0) chan_cont |= XSP3_CC_SEL_DATA(XSP3_CC_SEL_DATA_EXT0);
     else chan_cont |= XSP3_CC_SEL_DATA(XSP3_CC_SEL_DATA_EXT1);
-    chan_cont = 0; // TODO: find out correct value
+    chan_cont = 0;
 
-    // TODO: make sure we understand what chan_cont means for marker channels
     if (chan % 2 == 0) xsp_status = xsp3_setup_marker_chan(xsp_handle_, chan, chan_cont, 1, 1, 0);
     else xsp_status = xsp3_setup_marker_chan(xsp_handle_, chan, chan_cont, 1, 1, 1);
   }
