@@ -604,6 +604,56 @@ int LibXspressSimulator::get_num_frames_read(int32_t *frames)
   return status;
 }
 
+/**
+ * @brief Get the current time frame of the Xspress system
+ * 
+ * Unlike get_num_frames_read this tracks the time frame of the Xspress system
+ * rather than how many frames have been read into shared memory.
+ * 
+ * This is used for list mode where the Xspress library doesn't receive the list
+ * mode data - instead the Odin frame receivers connect directly.
+ * 
+ * @param current_tf Current time frame
+ * @return int Status code
+ */
+int LibXspressSimulator::get_current_tf(u_int32_t *current_tf)
+{
+  // For the simulator just use get_num_frames_read
+  int32_t frames;
+  int status = get_num_frames_read(&frames);
+  *current_tf = frames;
+  return status;
+}
+
+
+/**
+ * @brief Get whether the ITFG is running
+ * 
+ * @param[out] itfg_running Whether ITFG is running or not
+ * @return int Status code
+ */
+int LibXspressSimulator::is_itfg_running(bool *itfg_running)
+{
+  *itfg_running = acquisition_state_;
+  return XSP_STATUS_OK;
+}
+
+/**
+ * @brief Get whether the ITFG is waiting for trigger
+ * 
+ * Used when in software mode to correct the number of
+ * time frames completed
+ * 
+ * @param[out] itfg_waiting Whether ITFG is waiting for trigger
+ * @return int Status code
+ */
+int LibXspressSimulator::is_itfg_waiting_for_trigger(bool *itfg_waiting)
+{
+  // Shouldn't need to correct in simulation mode?
+  *itfg_waiting = false;
+  return XSP_STATUS_OK;
+}
+
 int LibXspressSimulator::get_num_scalars(uint32_t *num_scalars)
 {
   *num_scalars = XSP3_SW_NUM_SCALERS;

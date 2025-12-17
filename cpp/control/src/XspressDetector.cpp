@@ -48,7 +48,9 @@ XspressDetector::XspressDetector(bool simulation) :
     xsp_debounce_(0),
     xsp_exposure_time_(1.0),
     xsp_frames_(1),
-    xsp_mode_(XSP_MODE_MCA)
+    xsp_mode_(XSP_MODE_MCA),
+    first_software_trigger_sent_(false),
+    manually_stopped_waiting_for_trigger_(false)
 {
   OdinData::configure_logging_mdc(OdinData::app_path.c_str());
   LOG4CXX_INFO(logger_, "Constructing XspressDetector");
@@ -559,6 +561,10 @@ int XspressDetector::startAcquisition()
 
   if (status == XSP_STATUS_OK){
     if (xsp_trigger_mode_ == TM_SOFTWARE){
+      // Reset first software trigger state
+      first_software_trigger_sent_ = false;
+      manually_stopped_waiting_for_trigger_ = false;
+
       // Arm for soft trigger
       status = detector_->histogram_arm(0);
     } else {
@@ -589,6 +595,11 @@ int XspressDetector::stopAcquisition()
 {
   int status = XSP_STATUS_OK;
   if (acquiring_){
+    // Check if the system was waiting for a trigger at the time
+    bool waiting;
+    detector_->is_itfg_waiting_for_trigger(&waiting);
+    if (waiting) manually_stopped_waiting_for_trigger_ = true;
+
     if (xsp_mode_ == XSP_MODE_MCA){
       // If the DAQ object exists then stop any acquisition loop
       if (daq_){
@@ -607,10 +618,10 @@ int XspressDetector::sendSoftwareTrigger()
 {
   int status = XSP_STATUS_OK;
   if (acquiring_){
-    // TODO: BEN: handle what happens in list mode if required
     if (xsp_trigger_mode_ == TM_SOFTWARE){
       status = detector_->histogram_continue(0);
       status |= detector_->histogram_pause(0);
+      first_software_trigger_sent_ = true;
     } else {
       setErrorString("Cannot send software trigger, trigger_mode is not [software]");
       status = XSP_STATUS_ERROR;
@@ -1247,6 +1258,7 @@ bool XspressDetector::getXspAcquiring()
       // Check the DAQ flag.  If it is false then reset our flag
       if (!daq_->getAcqRunning()){
         acquiring_ = false;
+
         // Check to see if the acquisition failed
         if (daq_->getAcqFailed()){
           // If the acquisition failed propagate the error
@@ -1254,6 +1266,14 @@ bool XspressDetector::getXspAcquiring()
           acq_failed_ = true;
         }
       }
+    }
+    else if (xsp_mode_ == XSP_MODE_LIST && using_itfg())
+    {
+      // This only works if the ITFG is running - i.e. not using a gated
+      // hardware trigger or software start/stop
+      bool running;
+      int status = detector_->is_itfg_running(&running);
+      if (!running) acquiring_ = false;
     }
   }
   // The second job is to return the acquiring state
@@ -1273,10 +1293,35 @@ void XspressDetector::resetXspAcqFailed()
 uint32_t XspressDetector::getXspFramesRead()
 {
   uint32_t frames = 0;
+
   // If DAQ exists return the counter from that object.
   if (daq_){
     frames = daq_->getFramesRead();
   }
+  // Otherwise check if we are in list mode
+  else if (xsp_mode_ == XSP_MODE_LIST)
+  {
+    int status = detector_->get_current_tf(&frames);
+
+    // Correct for software trigger mode
+    if (xsp_trigger_mode_ == TM_SOFTWARE && first_software_trigger_sent_)
+    {
+      if (acquiring_)
+      {
+        // The reported TF is always 1 less when the system
+        // is waiting for a software trigger (except for the first one)
+        bool waiting;
+        detector_->is_itfg_waiting_for_trigger(&waiting);
+        if (waiting) frames++;
+      }
+      else
+      {
+        // If we are idle we may need to add one if we were manually stopped
+        if (manually_stopped_waiting_for_trigger_) frames++;
+      }
+    }
+  }
+
   return frames;
 }
 
@@ -1328,6 +1373,33 @@ std::vector<int32_t> XspressDetector::getChannelsConnected()
 std::vector<bool> XspressDetector::getCardsConnected()
 {
   return cards_connected_;
+}
+
+/**
+ * @brief Returns whether the acquisition will be using the ITFG
+ * 
+ * This is based on the trigger mode. The ITFG is used if the Xspress
+ * frames are internally-timed.
+ * 
+ * This will be false if we are using hardware-gated triggers or software
+ * start/stop.
+ * 
+ * @return true The ITFG will be used in an acquisition
+ * @return false The ITFG will not be used
+ */
+bool XspressDetector::using_itfg()
+{
+  switch(xsp_trigger_mode_)
+  {
+    case TM_TTL_VETO_ONLY:
+    case TM_TTL_BOTH:
+    case TM_LVDS_VETO_ONLY:
+    case TM_LVDS_BOTH:
+    case TM_SOFTWARE_START_STOP:
+      return false;
+    default:
+      return true;
+  }
 }
 
 } /* namespace Xspress */
