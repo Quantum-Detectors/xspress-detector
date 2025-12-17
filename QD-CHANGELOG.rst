@@ -6,7 +6,7 @@ Changes made by Quantum Detectors to this repository are recorded below.
 Unreleased
 ----------
 
-Changed:
+Added:
 
 - Added frame counter progress for XspressDetector and acquire status for X3X2
   list mode. Doesn't yet work for TTL/LVDS veto trigger mode (hardware-gated
