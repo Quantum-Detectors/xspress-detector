@@ -3,6 +3,16 @@ Change log
 
 Changes made by Quantum Detectors to this repository are recorded below.
 
+0.5.0+qd0.9
+-----------
+
+Added:
+
+- Added XSP3_CLK_FLAGS_TS_SYNC when configuring clocks for X3X2 so that the
+  timestamps reset. This avoids the timestamps for markers and event channels
+  drifting apart when the system is not running
+
+
 0.5.0+qd0.8
 -----------
 
