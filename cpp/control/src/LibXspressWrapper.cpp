@@ -1364,11 +1364,14 @@ int LibXspressWrapper::setup_clocks(int num_cards)
   if (xsp3_is_xsp3m_plus(0) == 1)
   {
     LOG4CXX_DEBUG_LEVEL(1, logger_, "Xspress wrapper configuring X3X2 midplane clock");
+    // Also configure XSP3_CLK_FLAGS_TS_SYNC to reset timestamps to 0 on card 0 run,
+    // otherwise the timestamp for the marker channels and event channels drift
+    // apart.
     xsp_status = xsp3_clocks_setup(
       xsp_handle_,
       -1,
       XSP4_CLK_SRC_MIDPLN_LMK61E2,
-      XSP3_CLK_FLAGS_NO_DITHER,
+      XSP3_CLK_FLAGS_NO_DITHER | XSP3_CLK_FLAGS_TS_SYNC,
       0
     );
     // < 0 for error, 0 for Xspress 3 success and clock frequency for other models
