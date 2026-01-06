@@ -50,7 +50,7 @@ class FPXspressAdapter(FrameProcessorAdapter):
         self._num_channels = 0
         self._num_process = 1
         self._mca_per_client = 0
-        self._batch_size = 0
+        self._batch_size = 1
         super(FPXspressAdapter, self).__init__(**kwargs)
 
     def initialize(self, adapters):

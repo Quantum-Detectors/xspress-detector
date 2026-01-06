@@ -3,6 +3,19 @@ Change log
 
 Changes made by Quantum Detectors to this repository are recorded below.
 
+0.5.0+qd0.10
+------------
+
+Fixed:
+
+- Fixed memory allocation for number of channels in XspressProcessPlugin. Would
+  previously allocate one additional block than necessary in the loop.
+- Set batch size in FPXspressAdapter to 1 (instead of 0). This fixes an issue
+  where the XspressProcessPlugin would allocate no memory for the MCA data and
+  cause it to crash if the data saving was not enabled first to set it to a
+  non-zero value.
+
+
 0.5.0+qd0.9
 -----------
 
