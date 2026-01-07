@@ -178,7 +178,7 @@ void XspressProcessPlugin::configure(OdinData::IpcMessage& config, OdinData::Ipc
       if (config.get_param<uint32_t>(XspressProcessPlugin::CONFIG_CHUNK) > MAX_SCALAR_MEM_BLOCK_SIZE)
       {
         this->frames_per_block_ = 4096;
-        LOG4CXX_WARN(logger_, "Batch size configured to a value grater than the maximum allowed. Forcing it to " << MAX_SCALAR_MEM_BLOCK_SIZE);
+        LOG4CXX_WARN(logger_, "Batch size configured to a value greater than the maximum allowed. Forcing it to " << MAX_SCALAR_MEM_BLOCK_SIZE);
       }
       else
       {
@@ -316,7 +316,7 @@ void XspressProcessPlugin::setup_memory_allocation()
   // Allocate one block of memory for each channel
   uint32_t frame_size = num_energy_bins_ * num_aux_ * sizeof(uint32_t);
   LOG4CXX_DEBUG_LEVEL(3, logger_, "frames_per_block_ inside the setup_memory_allocation method: " << frames_per_block_);
-  for (int index = 0; index <= num_channels_; index++){
+  for (int index = 0; index < num_channels_; index++){
     boost::shared_ptr<XspressMemoryBlock> ptr = boost::shared_ptr<XspressMemoryBlock>(new XspressMemoryBlock());
     ptr->set_size(frame_size, frames_per_block_);
     memory_ptrs_.push_back(ptr);
