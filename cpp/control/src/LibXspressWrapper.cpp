@@ -9,6 +9,8 @@
 #include "dirent.h"
 #include <iostream>
 #include <limits>
+#include <filesystem>
+#include <fnmatch.h> 
 
 #include "LibXspressWrapper.h"
 #include "DebugLevelLogger.h"
@@ -202,7 +204,24 @@ int LibXspressWrapper::configure_list(int num_cards,                 // Number o
     Xsp3mRd_SendHistList,                   // Configure readout for list mode
     XspressReal                             // XspressReal
   );
+  namespace fs = std::filesystem;
+	std::string directory = "/dev/shm/";
+	std::string pattern = "xsp*";
 
+	for (const auto& entry : fs::directory_iterator(directory)) {
+		if (!entry.is_regular_file()) continue; // skip subdirectories
+
+		const auto& filename = entry.path().filename().string();
+
+		// Check if filename matches the wildcard pattern
+		if (fnmatch(pattern.c_str(), filename.c_str(), 0) == 0) {
+			if (fs::remove(entry.path())) {
+				std::cout << "Deleted: " << entry.path() << "\n";
+			} else {
+				std::cerr << "Failed to delete: " << entry.path() << "\n";
+			}
+		}
+}
   // Check the returned handle.  
   // If the handle is less than zero then set an error
   if (xsp_handle_ < 0){
