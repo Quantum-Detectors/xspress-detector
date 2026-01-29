@@ -565,7 +565,9 @@ void XspressController::configureXsp(OdinData::IpcMessage& config, OdinData::Ipc
   if (config.has_param(XspressController::CONFIG_XSP_RESET_TS)) {
     int reset_ts = config.get_param<int>(XspressController::CONFIG_XSP_RESET_TS);
     LOG4CXX_DEBUG_LEVEL(1, logger_, "reset_ts set to  " << reset_ts);
+    printf("Setting reset_ts to %d\n", reset_ts);
     xsp_->setXspResetTs(reset_ts);
+    xsp_->setupClocks();
   }
 
   // Check for invert_f0 parameter

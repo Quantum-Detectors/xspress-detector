@@ -105,6 +105,7 @@ public:
   double getXspDTCEnergy();
   void setXspTriggerMode(int mode);
   int getXspTriggerMode();
+  void setXspResetTs(int mode);
   void setXspInvertF0(int invert_f0);
   int getXspInvertF0();
   void setXspInvertVeto(int invert_veto);

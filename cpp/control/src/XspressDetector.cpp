@@ -911,6 +911,11 @@ int XspressDetector::getXspTriggerMode()
   return xsp_trigger_mode_;
 }
 
+void XspressDetector::setXspResetTs(int mode)
+{
+  xsp_reset_timestamp_ = mode;
+}
+
 void XspressDetector::setXspInvertF0(int invert_f0)
 {
   xsp_invert_f0_ = invert_f0;
