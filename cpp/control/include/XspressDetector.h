@@ -209,6 +209,8 @@ private:
   double                        xsp_clock_period_;
   /** Trigger mode */
   int                           xsp_trigger_mode_;
+  /** Reset Time Stamp */
+  int                           xsp_reset_timestamp_;
   /** Invert f0 */
   int                           xsp_invert_f0_;
   /** Invert veto */

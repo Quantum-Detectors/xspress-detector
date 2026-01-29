@@ -1372,25 +1372,28 @@ int LibXspressWrapper::set_trigger_input(bool list_mode)
  * is used as the clock source.
  * 
  * @param[in] num_cards Number of cards
+ * @param[in] reset_ts reset TS on or off
  * @return int Status whether we configured successfully or not
  */
-int LibXspressWrapper::setup_clocks(int num_cards)
+int LibXspressWrapper::setup_clocks(int num_cards, int reset_ts)
 {
   int status = XSP_STATUS_OK;
   int xsp_status;
+  int RESET_TS = 0;
+  // reset the TS if the reset_ts is 1
+  if (reset_ts) {
+    RESET_TS = XSP3_CLK_FLAGS_TS_SYNC;
+  }
 
   // Need to set up clocks specifically for X3X2 models for triggering to work
   if (xsp3_is_xsp3m_plus(0) == 1)
   {
     LOG4CXX_DEBUG_LEVEL(1, logger_, "Xspress wrapper configuring X3X2 midplane clock");
-    // Also configure XSP3_CLK_FLAGS_TS_SYNC to reset timestamps to 0 on card 0 run,
-    // otherwise the timestamp for the marker channels and event channels drift
-    // apart.
     xsp_status = xsp3_clocks_setup(
       xsp_handle_,
       -1,
-      XSP4_CLK_SRC_MIDPLN_LMK61E2,
-      XSP3_CLK_FLAGS_NO_DITHER | XSP3_CLK_FLAGS_TS_SYNC,
+      XSP4_CLK_SRC_MIDPLN_LMK61E2, 
+      XSP3_CLK_FLAGS_NO_DITHER | RESET_TS,
       0
     );
     // < 0 for error, 0 for Xspress 3 success and clock frequency for other models
@@ -1408,6 +1411,7 @@ int LibXspressWrapper::setup_clocks(int num_cards)
       status = XSP_STATUS_ERROR;
     }
   }
+  // We don't setup clocks if it is not X3X2
   return status;
 }
 

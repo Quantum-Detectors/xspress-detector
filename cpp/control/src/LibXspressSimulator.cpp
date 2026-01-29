@@ -1007,7 +1007,7 @@ int LibXspressSimulator::set_trigger_input(bool list_mode)
   return XSP_STATUS_OK;
 }
 
-int LibXspressSimulator::setup_clocks(int num_cards)
+int LibXspressSimulator::setup_clocks(int num_cards, int reset_ts)
 {
   // This is a no op for the simulator
   return XSP_STATUS_OK;

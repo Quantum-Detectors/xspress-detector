@@ -41,6 +41,7 @@ const std::string XspressController::CONFIG_XSP_USE_RESGRADES         = "use_res
 const std::string XspressController::CONFIG_XSP_RUN_FLAGS             = "run_flags";
 const std::string XspressController::CONFIG_XSP_DTC_ENERGY            = "dtc_energy";
 const std::string XspressController::CONFIG_XSP_TRIGGER_MODE          = "trigger_mode";
+const std::string XspressController::CONFIG_XSP_RESET_TS              = "reset_ts";
 const std::string XspressController::CONFIG_XSP_INVERT_F0             = "invert_f0";
 const std::string XspressController::CONFIG_XSP_INVERT_VETO           = "invert_veto";
 const std::string XspressController::CONFIG_XSP_DEBOUNCE              = "debounce";
@@ -558,6 +559,13 @@ void XspressController::configureXsp(OdinData::IpcMessage& config, OdinData::Ipc
     int trigger_mode = config.get_param<int>(XspressController::CONFIG_XSP_TRIGGER_MODE);
     LOG4CXX_DEBUG_LEVEL(1, logger_, "trigger_mode set to  " << trigger_mode);
     xsp_->setXspTriggerMode(trigger_mode);
+  }
+
+  // Check for reset time stamp parameter
+  if (config.has_param(XspressController::CONFIG_XSP_RESET_TS)) {
+    int reset_ts = config.get_param<int>(XspressController::CONFIG_XSP_RESET_TS);
+    LOG4CXX_DEBUG_LEVEL(1, logger_, "reset_ts set to  " << reset_ts);
+    xsp_->setXspResetTs(reset_ts);
   }
 
   // Check for invert_f0 parameter

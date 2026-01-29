@@ -88,6 +88,7 @@ private:
   static const std::string CONFIG_XSP_RUN_FLAGS;
   static const std::string CONFIG_XSP_DTC_ENERGY;
   static const std::string CONFIG_XSP_TRIGGER_MODE;
+  static const std::string CONFIG_XSP_RESET_TS;
   static const std::string CONFIG_XSP_INVERT_F0;
   static const std::string CONFIG_XSP_INVERT_VETO;
   static const std::string CONFIG_XSP_DEBOUNCE;
