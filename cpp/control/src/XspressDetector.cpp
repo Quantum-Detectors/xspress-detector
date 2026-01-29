@@ -219,6 +219,7 @@ int XspressDetector::setupClocks()
 {
   int status = XSP_STATUS_OK;
   if (checkConnected()){
+    printf("Setting up clocks with reset_ts = %d\n", xsp_reset_timestamp_);
     status = detector_->setup_clocks(xsp_num_cards_, xsp_reset_timestamp_);
     if (status != XSP_STATUS_OK)
     {
