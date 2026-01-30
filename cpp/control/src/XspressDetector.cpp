@@ -528,6 +528,7 @@ int XspressDetector::writeDTCParams()
 
 int XspressDetector::setTriggerMode()
 {
+  printf("Setting trigger mode %d\n", xsp_trigger_mode_);
   return detector_->setTriggerMode(xsp_frames_,
                                   xsp_exposure_time_,
                                   xsp_clock_period_,
@@ -915,6 +916,7 @@ int XspressDetector::getXspTriggerMode()
 void XspressDetector::setXspResetTs(int mode)
 {
   xsp_reset_timestamp_ = mode;
+  reconnectRequired();
 }
 
 void XspressDetector::setXspInvertF0(int invert_f0)
