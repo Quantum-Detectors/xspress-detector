@@ -43,6 +43,7 @@ XspressDetector::XspressDetector(bool simulation) :
     xsp_dtc_energy_(0.0),
     xsp_clock_period_(0),
     xsp_trigger_mode_(TM_SOFTWARE),
+    xsp_reset_timestamp_(0),
     xsp_invert_f0_(0),
     xsp_invert_veto_(0),
     xsp_debounce_(0),
@@ -218,7 +219,8 @@ int XspressDetector::setupClocks()
 {
   int status = XSP_STATUS_OK;
   if (checkConnected()){
-    status = detector_->setup_clocks(xsp_num_cards_);
+    LOG4CXX_INFO(logger_, "Setting up clocks with reset_ts = " << xsp_reset_timestamp_);
+    status = detector_->setup_clocks(xsp_num_cards_, xsp_reset_timestamp_);
     if (status != XSP_STATUS_OK)
     {
       setErrorString("Failed to configure card clocks");
@@ -908,6 +910,14 @@ void XspressDetector::setXspTriggerMode(int mode)
 int XspressDetector::getXspTriggerMode()
 {
   return xsp_trigger_mode_;
+}
+
+void XspressDetector::setXspResetTs(int reset_timestamp_)
+{
+  if (reset_timestamp_ != xsp_reset_timestamp_){
+    xsp_reset_timestamp_ = reset_timestamp_;
+    reconnectRequired();
+  }
 }
 
 void XspressDetector::setXspInvertF0(int invert_f0)

@@ -256,6 +256,8 @@ class XspressDetectorStr:
     CONFIG_DEBOUNCE = "debounce"
     CONFIG_EXPOSURE_TIME = "exposure_time"
     CONFIG_NUM_IMAGES = "num_images"  # so only "num_images" is used
+    CONFIG_RESET_TS = "reset_ts"
+
 
     CONFIG_MODE = "mode"
     CONFIG_MODE_CONTROL = "mode_control"
@@ -645,6 +647,15 @@ class XspressDetector(object):
                         self._put,
                         MessageType.CONFIG,
                         XspressDetectorStr.CONFIG_NUM_IMAGES,
+                    ),
+                ),
+                XspressDetectorStr.CONFIG_RESET_TS: ValueParameter(
+                    int,
+                    0,
+                    partial(
+                        self._put,
+                        MessageType.CONFIG,
+                        XspressDetectorStr.CONFIG_RESET_TS,
                     ),
                 ),
                 XspressDetectorStr.CONFIG_SCA5_LOW: ListParameter(

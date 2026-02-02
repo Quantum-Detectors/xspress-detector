@@ -105,6 +105,7 @@ public:
   double getXspDTCEnergy();
   void setXspTriggerMode(int mode);
   int getXspTriggerMode();
+  void setXspResetTs(int mode);
   void setXspInvertF0(int invert_f0);
   int getXspInvertF0();
   void setXspInvertVeto(int invert_veto);
@@ -209,6 +210,8 @@ private:
   double                        xsp_clock_period_;
   /** Trigger mode */
   int                           xsp_trigger_mode_;
+  /** Reset Time Stamp */
+  int                           xsp_reset_timestamp_;
   /** Invert f0 */
   int                           xsp_invert_f0_;
   /** Invert veto */
