@@ -219,7 +219,7 @@ int XspressDetector::setupClocks()
 {
   int status = XSP_STATUS_OK;
   if (checkConnected()){
-    printf("Setting up clocks with reset_ts = %d\n", xsp_reset_timestamp_);
+    LOG4CXX_INFO(logger_, "Setting up clocks with reset_ts = " << xsp_reset_timestamp_);
     status = detector_->setup_clocks(xsp_num_cards_, xsp_reset_timestamp_);
     if (status != XSP_STATUS_OK)
     {
@@ -528,7 +528,6 @@ int XspressDetector::writeDTCParams()
 
 int XspressDetector::setTriggerMode()
 {
-  printf("Setting trigger mode %d\n", xsp_trigger_mode_);
   return detector_->setTriggerMode(xsp_frames_,
                                   xsp_exposure_time_,
                                   xsp_clock_period_,
@@ -913,10 +912,12 @@ int XspressDetector::getXspTriggerMode()
   return xsp_trigger_mode_;
 }
 
-void XspressDetector::setXspResetTs(int mode)
+void XspressDetector::setXspResetTs(int reset_timestamp_)
 {
-  xsp_reset_timestamp_ = mode;
-  reconnectRequired();
+  if (reset_timestamp_ != xsp_reset_timestamp_){
+    xsp_reset_timestamp_ = reset_timestamp_;
+    reconnectRequired();
+  }
 }
 
 void XspressDetector::setXspInvertF0(int invert_f0)
