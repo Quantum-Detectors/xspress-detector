@@ -3,6 +3,14 @@ Change log
 
 Changes made by Quantum Detectors to this repository are recorded below.
 
+0.5.0+qd0.11
+------------
+
+Added:
+
+- Added the RESET_TS option which can be controlled by a PV to reset the
+  timestamps in X3X2 list mode acquisitions. 
+
 0.5.0+qd0.10
 ------------
 
