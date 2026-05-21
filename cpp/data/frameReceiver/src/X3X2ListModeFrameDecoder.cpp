@@ -23,7 +23,7 @@ X3X2ListModeFrameDecoder::X3X2ListModeFrameDecoder()
       current_frame_number_(X3X2ListModeFrameDecoderDefaults::frame_number),
       current_frame_buffer_id_(X3X2ListModeFrameDecoderDefaults::buffer_id),
       header_size_(X3X2ListModeFrameDecoderDefaults::header_size),
-      frame_size_(X3X2ListModeFrameDecoderDefaults::max_size),
+      frame_size_(X3X2ListModeFrameDecoderDefaults::max_size * PKTS_PER_FRAME),
       num_buffers_(X3X2ListModeFrameDecoderDefaults::num_buffers),
       frames_dropped_(0), frames_sent_(0), read_so_far_(0),
       receive_state_(FrameDecoder::FrameReceiveStateEmpty) {
@@ -31,9 +31,6 @@ X3X2ListModeFrameDecoder::X3X2ListModeFrameDecoder()
   LOG4CXX_INFO(logger_, "X3X2ListModeFrameDecoder version "
                             << this->get_version_long() << " loaded");
 
-  // The total buffer size which holds multiple frames
-  buffer_size_ = num_buffers_ * frame_size_;
-  frame_buffer_.reset(new char[buffer_size_]);
 }
 
 //! Destructor for X3X2ListModeFrameDecoder

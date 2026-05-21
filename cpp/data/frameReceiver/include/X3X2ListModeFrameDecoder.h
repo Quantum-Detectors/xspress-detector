@@ -23,7 +23,7 @@ namespace X3X2ListModeFrameDecoderDefaults {
   const int buffer_id = 0;
   const size_t max_size = X3X2_MINI_TCP_FRAME_SIZE; // Each TCP frame is 8192 bytes of 4096 16 bit words
   const size_t header_size = 0; // Initially we do not need a header
-  const int num_buffers = 12800; // 100MB buffer
+  const int num_buffers = 12800 / PKTS_PER_FRAME; // 100MB buffer
 } // namespace X3X2ListModeFrameDecoderDefaults
 
 class X3X2ListModeFrameDecoder : public FrameDecoderTCP {
@@ -60,13 +60,11 @@ public:
   uint32_t get_packet_number(void) const;
 
 private:
-  boost::shared_ptr<void> frame_buffer_;
   size_t frames_dropped_;
   size_t frames_sent_;
   size_t read_so_far_;
   int current_frame_number_;
   int current_frame_buffer_id_;
-  size_t buffer_size_;
   size_t header_size_;
   size_t frame_size_;
   unsigned int num_buffers_;

@@ -464,7 +464,7 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
   uint16_t value;
   uint64_t value_64;
 
-  for (unsigned int field = 0; field < X3X2_MINI_FIELDS_PER_FRAME; field++)
+  for (unsigned int field = 0; field < X3X2_MINI_FIELDS_PER_FRAME * PKTS_PER_FRAME; field++)
   {
     // Decode field
     id = frame_data[field] >> 12;

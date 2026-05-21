@@ -8,4 +8,6 @@
 #define X3X2_MINI_TCP_FRAME_SIZE    8192
 #define X3X2_MINI_FIELDS_PER_FRAME  4096
 
+#define PKTS_PER_FRAME 20
+
 #endif
