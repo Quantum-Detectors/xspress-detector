@@ -13,6 +13,7 @@ using namespace log4cxx::helpers;
 #include "FrameProcessorPlugin.h"
 #include "XspressDefinitions.h"
 #include "X3X2ListModeMemoryBlocks.h"
+#include "X3X2ListModeScheduler.h"
 #include "gettime.h"
 
 namespace FrameProcessor
@@ -77,6 +78,7 @@ namespace FrameProcessor
     // Acquisition properties
     uint32_t num_time_frames_;
     bool acquisition_complete_;
+    bool parallel_;
 
     // Tracking per channel
     std::map<uint32_t, bool> completed_channels_;
@@ -98,6 +100,9 @@ namespace FrameProcessor
     static const std::string CONFIG_FLUSH_ACQUISITION;
     static const std::string CONFIG_FRAME_SIZE;
     static const std::string CONFIG_TIME_FRAMES;
+    static const std::string CONFIG_PARALLEL;
+
+    X3X2ListModeScheduler sch;
 
     /** Pointer to logger */
     LoggerPtr logger_;

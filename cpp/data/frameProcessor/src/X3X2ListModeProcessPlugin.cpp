@@ -16,6 +16,8 @@ const std::string X3X2ListModeProcessPlugin::CONFIG_RESET_ACQUISITION =  "reset"
 const std::string X3X2ListModeProcessPlugin::CONFIG_FLUSH_ACQUISITION =  "flush";
 const std::string X3X2ListModeProcessPlugin::CONFIG_FRAME_SIZE =         "frame_size";
 const std::string X3X2ListModeProcessPlugin::CONFIG_TIME_FRAMES =        "time_frames";
+const std::string X3X2ListModeProcessPlugin::CONFIG_PARALLEL =           "parallel";
+
 
 X3X2ListModeProcessPlugin::X3X2ListModeProcessPlugin() :
   num_channels_(0),
@@ -28,7 +30,8 @@ X3X2ListModeProcessPlugin::X3X2ListModeProcessPlugin() :
   prev_time_frames_(),
   prev_time_stamps_(),
   frame_size_events_(524280),
-  acquisition_complete_(false)
+  acquisition_complete_(false),
+  parallel_(false)
 {
   // Setup logging for the class
   logger_ = Logger::getLogger("FP.X3X2ListModeProcessPlugin");
@@ -84,6 +87,11 @@ void X3X2ListModeProcessPlugin::configure(OdinData::IpcMessage& config, OdinData
   if (config.has_param(X3X2ListModeProcessPlugin::CONFIG_TIME_FRAMES)){
     num_time_frames_ = config.get_param<unsigned int>(X3X2ListModeProcessPlugin::CONFIG_TIME_FRAMES);
     LOG4CXX_INFO(logger_, "Number of time frames has been set to  " << num_time_frames_);
+  }
+
+  if (config.has_param(X3X2ListModeProcessPlugin::CONFIG_PARALLEL)){
+    parallel_ = config.get_param<bool>(X3X2ListModeProcessPlugin::CONFIG_PARALLEL);
+    LOG4CXX_INFO(logger_, "Parallel mode set to " << parallel_);
   }
 
 }
@@ -150,6 +158,9 @@ void X3X2ListModeProcessPlugin::set_channels(std::vector<uint32_t> channels)
   num_channels_ = channels.size();
 
   LOG4CXX_INFO(logger_, "Configured for " << num_channels_ << " channels");
+
+  // Send the channels to the scheduler
+  sch.set_channels(channels_);
 
   reset_channel_statistics();
 
@@ -312,6 +323,7 @@ void X3X2ListModeProcessPlugin::set_frame_size(uint32_t num_events)
 void X3X2ListModeProcessPlugin::setup_channel_memory_blocks(uint32_t channel)
 {
   // Names for memory block frames
+  std::string prefix;
   std::string timeframe_name;
   std::string timestamp_name;
   std::string event_height_name;
@@ -319,6 +331,7 @@ void X3X2ListModeProcessPlugin::setup_channel_memory_blocks(uint32_t channel)
 
   // TODO: fix this logic
   if (std::find(marker_channels_.begin(), marker_channels_.end(), channel) == marker_channels_.end()) {
+    prefix = "ch";
     timeframe_name = "ch" + std::to_string(channel) + "_time_frame";
     timestamp_name = "ch" + std::to_string(channel) + "_time_stamp";
     event_height_name = "ch" + std::to_string(channel) + "_event_height";
@@ -327,12 +340,15 @@ void X3X2ListModeProcessPlugin::setup_channel_memory_blocks(uint32_t channel)
   {
     // Use different dataset names for marker channels
     uint32_t marker_num = channel - channel_offset_ - 2;
+    prefix = "marker";
     timeframe_name = "marker" + std::to_string(marker_num) + "_time_frame";
     timestamp_name = "marker" + std::to_string(marker_num) + "_time_stamp";
     event_height_name = "marker" + std::to_string(marker_num) + "_event_height";
     reset_flag_name = "marker" + std::to_string(marker_num) + "_reset_flag";
   }
 
+  // Set up parallel frame blocks
+  sch.setup_frame_stores(channel, prefix, frame_size_events_);
 
   // Size of each memory block in bytes based on the number of events we want to
   // store in each frame
@@ -437,6 +453,16 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
   // receiving the EOF for the desired TF on all channels or it was manually
   // stopped using the Odin Data API
   if (acquisition_complete_) return;
+
+//  uint16_t* frame_data = static_cast<uint16_t *>(frame->get_data_ptr());
+
+  if (parallel_){
+    std::vector<boost::shared_ptr<Frame> > frames = sch.process_frame(frame);
+    LOG4CXX_DEBUG_LEVEL(2, logger_, "Parallel processing - Pushing " << frames.size() << " frames.");
+    for (auto iter = frames.begin(); iter != frames.end(); iter++){
+      this->push(*iter);
+    }
+  } else {
 
   uint16_t* frame_data = static_cast<uint16_t *>(frame->get_data_ptr());
 
@@ -614,5 +640,7 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
     }
   }
 }
+}
+
 
 }
