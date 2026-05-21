@@ -31,7 +31,7 @@ X3X2ListModeProcessPlugin::X3X2ListModeProcessPlugin() :
   prev_time_stamps_(),
   frame_size_events_(524280),
   acquisition_complete_(false),
-  parallel_(false)
+  parallel_(true)
 {
   // Setup logging for the class
   logger_ = Logger::getLogger("FP.X3X2ListModeProcessPlugin");
