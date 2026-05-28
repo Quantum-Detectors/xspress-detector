@@ -31,6 +31,11 @@ X3X2ListModeScheduler::~X3X2ListModeScheduler()
   LOG4CXX_TRACE(logger_, "X3X2ListModeScheduler destructor.");
 }
 
+void X3X2ListModeScheduler::set_number_of_time_frames(uint32_t time_frames)
+{
+  num_time_frames_ = time_frames;
+}
+
 void X3X2ListModeScheduler::set_channels(std::vector<uint32_t> channels)
 {
   std::stringstream ss;
@@ -44,7 +49,7 @@ void X3X2ListModeScheduler::set_channels(std::vector<uint32_t> channels)
   channel_offset_ = channels[0];
   LOG4CXX_INFO(logger_, "Setting channels offset to [" << channel_offset_ << "].");
 
-  this->setup_time_stores();
+  this->reset_time_stores();
 }
 
 void X3X2ListModeScheduler::setup_frame_stores(uint32_t channel, const std::string& prefix, uint32_t frame_event_qty)
@@ -83,13 +88,15 @@ void X3X2ListModeScheduler::setup_frame_stores(uint32_t channel, const std::stri
   rf_store_ptrs_[channel] = rf_store;
 }
 
-void X3X2ListModeScheduler::setup_time_stores()
+void X3X2ListModeScheduler::reset_time_stores()
 {
   last_timeframe_store_.clear();
   last_timestamp_store_.clear();
+  completed_channels_.clear();
   for (auto iter = channels_.begin(); iter != channels_.end(); iter++){
     last_timeframe_store_[*iter] = 0;
     last_timestamp_store_[*iter] = 0;
+    completed_channels_[*iter] = false;
   }
 }
 
@@ -128,7 +135,7 @@ std::vector<boost::shared_ptr<Frame> > X3X2ListModeScheduler::process_frame(boos
 
   std::vector<boost::shared_ptr<Frame> > complete_frames;
 
-  LOG4CXX_INFO(logger_, "Frame processing with " << packets_received << " packets");
+  LOG4CXX_DEBUG_LEVEL(2, logger_, "Frame processing with " << packets_received << " packets");
   // Wrap a Job around each of the packets
   // Add the job to the jobQueue for processing
   for (uint32_t index = 0; index < packets_received; index++){
@@ -226,6 +233,27 @@ std::vector<boost::shared_ptr<Frame> > X3X2ListModeScheduler::process_frame(boos
     } else {
       LOG4CXX_ERROR(logger_, "Incorrect channel detected [" << channel << "] for reset flag store.");
     }
+
+    // Now check for an end of frame marker
+    if ((*iter)->get_eof_marker()){
+      if ((*iter)->get_last_timeframe() + 1 >= num_time_frames_){
+        LOG4CXX_INFO(logger_, "Acquisition of " << num_time_frames_ << " frames complete for channel " << channel);
+        completed_channels_[channel] = true;
+
+        // Check if every channel is now finished
+        uint16_t completed_channels = 0;
+        for (auto const& it : completed_channels_){
+          if (it.second) completed_channels++;
+        }
+        if (completed_channels == channels_.size()){
+          LOG4CXX_INFO(logger_, "FLUSHING !!!!  Acquisition of " << num_time_frames_ << " frames completed for all channels");
+          std::vector<boost::shared_ptr<Frame> > flushed_frames = this->flush();
+          complete_frames.insert(complete_frames.end(), flushed_frames.begin(), flushed_frames.end());
+          this->reset_acquisition();
+        }
+      }
+    }
+
     this->release_job(*iter);
   }
   return complete_frames;
@@ -245,6 +273,58 @@ void X3X2ListModeScheduler::process_task()
     // Add the results onto the results queue
     res_queue_->add(job, true);
   }
+}
+
+std::vector<boost::shared_ptr<Frame> > X3X2ListModeScheduler::flush()
+{
+  std::vector<boost::shared_ptr<Frame> > complete_frames;
+
+  for (auto iter = tf_store_ptrs_.begin(); iter != tf_store_ptrs_.end(); ++iter){
+    LOG4CXX_DEBUG_LEVEL(0, logger_, "Flushing timeframe for channel " << iter->first);
+    boost::shared_ptr <Frame> frame = iter->second->to_frame();
+    if (frame){
+      complete_frames.push_back(frame);
+    }
+  }
+  for (auto iter = ts_store_ptrs_.begin(); iter != ts_store_ptrs_.end(); ++iter){
+    LOG4CXX_DEBUG_LEVEL(0, logger_, "Flushing timestamp for channel " << iter->first);
+    boost::shared_ptr <Frame> frame = iter->second->to_frame();
+    if (frame){
+      complete_frames.push_back(frame);
+    }
+  }
+  for (auto iter = eh_store_ptrs_.begin(); iter != eh_store_ptrs_.end(); ++iter){
+    LOG4CXX_DEBUG_LEVEL(0, logger_, "Flushing event height for channel " << iter->first);
+    boost::shared_ptr <Frame> frame = iter->second->to_frame();
+    if (frame){
+      complete_frames.push_back(frame);
+    }
+  }
+  for (auto iter = rf_store_ptrs_.begin(); iter != rf_store_ptrs_.end(); ++iter){
+    LOG4CXX_DEBUG_LEVEL(0, logger_, "Flushing reset flag for channel " << iter->first);
+    boost::shared_ptr <Frame> frame = iter->second->to_frame();
+    if (frame){
+      complete_frames.push_back(frame);
+    }
+  }
+  return complete_frames;
+}
+
+void X3X2ListModeScheduler::reset_acquisition()
+{
+  for (auto iter = tf_store_ptrs_.begin(); iter != tf_store_ptrs_.end(); ++iter){
+    iter->second->reset_frame_count();
+  }
+  for (auto iter = ts_store_ptrs_.begin(); iter != ts_store_ptrs_.end(); ++iter){
+    iter->second->reset_frame_count();
+  }
+  for (auto iter = eh_store_ptrs_.begin(); iter != eh_store_ptrs_.end(); ++iter){
+    iter->second->reset_frame_count();
+  }
+  for (auto iter = rf_store_ptrs_.begin(); iter != rf_store_ptrs_.end(); ++iter){
+    iter->second->reset_frame_count();
+  }
+  this->reset_time_stores();
 }
 
 }

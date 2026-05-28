@@ -102,7 +102,7 @@ namespace FrameProcessor
     static const std::string CONFIG_TIME_FRAMES;
     static const std::string CONFIG_PARALLEL;
 
-    X3X2ListModeScheduler sch;
+    X3X2ListModeScheduler sch_;
 
     /** Pointer to logger */
     LoggerPtr logger_;

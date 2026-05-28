@@ -87,6 +87,7 @@ void X3X2ListModeProcessPlugin::configure(OdinData::IpcMessage& config, OdinData
   if (config.has_param(X3X2ListModeProcessPlugin::CONFIG_TIME_FRAMES)){
     num_time_frames_ = config.get_param<unsigned int>(X3X2ListModeProcessPlugin::CONFIG_TIME_FRAMES);
     LOG4CXX_INFO(logger_, "Number of time frames has been set to  " << num_time_frames_);
+    sch_.set_number_of_time_frames(num_time_frames_);
   }
 
   if (config.has_param(X3X2ListModeProcessPlugin::CONFIG_PARALLEL)){
@@ -160,7 +161,7 @@ void X3X2ListModeProcessPlugin::set_channels(std::vector<uint32_t> channels)
   LOG4CXX_INFO(logger_, "Configured for " << num_channels_ << " channels");
 
   // Send the channels to the scheduler
-  sch.set_channels(channels_);
+  sch_.set_channels(channels_);
 
   reset_channel_statistics();
 
@@ -348,7 +349,7 @@ void X3X2ListModeProcessPlugin::setup_channel_memory_blocks(uint32_t channel)
   }
 
   // Set up parallel frame blocks
-  sch.setup_frame_stores(channel, prefix, frame_size_events_);
+  sch_.setup_frame_stores(channel, prefix, frame_size_events_);
 
   // Size of each memory block in bytes based on the number of events we want to
   // store in each frame
@@ -457,7 +458,7 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
 //  uint16_t* frame_data = static_cast<uint16_t *>(frame->get_data_ptr());
 
   if (parallel_){
-    std::vector<boost::shared_ptr<Frame> > frames = sch.process_frame(frame);
+    std::vector<boost::shared_ptr<Frame> > frames = sch_.process_frame(frame);
     LOG4CXX_DEBUG_LEVEL(2, logger_, "Parallel processing - Pushing " << frames.size() << " frames.");
     for (auto iter = frames.begin(); iter != frames.end(); iter++){
       this->push(*iter);

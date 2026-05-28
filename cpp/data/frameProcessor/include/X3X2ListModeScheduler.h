@@ -34,13 +34,16 @@ namespace FrameProcessor
   public:
     X3X2ListModeScheduler();
     virtual ~X3X2ListModeScheduler();
+    void set_number_of_time_frames(uint32_t time_frames);
     void set_channels(std::vector<uint32_t> channels);
     void setup_frame_stores(uint32_t channel, const std::string& prefix, uint32_t frame_event_qty);
-    void setup_time_stores();
+    void reset_time_stores();
     boost::shared_ptr<X3X2ListModeProcessJob> get_job();
     void release_job(boost::shared_ptr<X3X2ListModeProcessJob> job);
     std::vector<boost::shared_ptr<Frame> > process_frame(boost::shared_ptr<Frame> frame);
     void process_task();
+    std::vector<boost::shared_ptr<Frame> > flush();
+    void reset_acquisition();
 
   private:
     /** Pointer to logger */
@@ -49,6 +52,9 @@ namespace FrameProcessor
     /** Channels and offset */
     uint32_t channel_offset_;
     std::vector<uint32_t> channels_;
+
+    /** Acquisition properties */
+    uint32_t num_time_frames_;
 
     /** Pointer to worker queue thread */
     boost::thread *thread_[PROCESS_THREADS];
@@ -70,6 +76,10 @@ namespace FrameProcessor
     // Timeframe and timestamp last value stores
     std::map<uint32_t, uint64_t> last_timeframe_store_;
     std::map<uint32_t, uint64_t> last_timestamp_store_;
+
+    // Completed channels
+    std::map<uint32_t, bool> completed_channels_;
+
 
     //    X3X2ListModeFrameStoreTimeframe tf_store_;
 //    X3X2ListModeFrameStoreTimestamp ts_store_;

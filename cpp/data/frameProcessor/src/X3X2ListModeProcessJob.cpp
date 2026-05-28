@@ -8,7 +8,8 @@ namespace FrameProcessor {
 
 X3X2ListModeProcessJob::X3X2ListModeProcessJob() : 
   channel_(0),
-  event_qty_(0)
+  event_qty_(0),
+  end_of_frame_marker_(false)
 {
   // Setup logging for the class
   logger_ = Logger::getLogger("FP.X3X2ListModeProcessJob");
@@ -42,6 +43,7 @@ void X3X2ListModeProcessJob::init(uint32_t index, uint16_t *frame_data)
   first_time_stamp_ = 0;
   last_time_frame_ = 0;
   last_time_stamp_ = 0;
+  end_of_frame_marker_ = false;
 }
 
 uint32_t X3X2ListModeProcessJob::get_index() 
@@ -102,6 +104,11 @@ uint64_t X3X2ListModeProcessJob::get_first_timestamp()
 uint64_t X3X2ListModeProcessJob::get_last_timestamp()
 {
   return last_time_stamp_;
+}
+
+bool X3X2ListModeProcessJob::get_eof_marker()
+{
+  return end_of_frame_marker_;
 }
 
 void X3X2ListModeProcessJob::process()
@@ -254,6 +261,9 @@ void X3X2ListModeProcessJob::process()
             rf_ptr_++;
             event_qty_++;
           }
+        } else {
+          LOG4CXX_INFO(logger_, "End of frame marker channel [" << channel_ << "] at index [" << field << "]!");
+          end_of_frame_marker_ = true;
         }
 //        else if (!acquisition_complete_)
 //        {

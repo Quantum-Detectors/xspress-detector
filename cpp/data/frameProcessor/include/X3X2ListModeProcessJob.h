@@ -37,6 +37,7 @@ namespace FrameProcessor
     uint64_t get_last_timeframe();
     uint64_t get_first_timestamp();
     uint64_t get_last_timestamp();
+    bool get_eof_marker();
     void process();
 
   private:
@@ -62,6 +63,8 @@ namespace FrameProcessor
     uint64_t first_time_stamp_;
     uint64_t last_time_frame_;
     uint64_t last_time_stamp_;
+
+    bool end_of_frame_marker_;
 
     /** Pointer to logger */
     LoggerPtr logger_;
