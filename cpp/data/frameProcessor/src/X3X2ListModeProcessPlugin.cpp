@@ -464,7 +464,12 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
     }
   } else {
 
-  uint16_t* frame_data = static_cast<uint16_t *>(frame->get_data_ptr());
+  char *raw_data = static_cast<char *>(frame->get_data_ptr());
+  X3X2::X3X2ListFrameHeader* frame_header = reinterpret_cast<X3X2::X3X2ListFrameHeader*>(raw_data);
+  raw_data += sizeof(X3X2::X3X2ListFrameHeader);
+  uint16_t* frame_data = reinterpret_cast<uint16_t *>(raw_data);
+
+  uint16_t packets_received = frame_header->packets_received;
 
   // Event attributes
   uint16_t acquisition_number = 0;
@@ -490,7 +495,7 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
   uint16_t value;
   uint64_t value_64;
 
-  for (unsigned int field = 0; field < X3X2_MINI_FIELDS_PER_FRAME * PKTS_PER_FRAME; field++)
+  for (unsigned int field = 0; field < X3X2_MINI_FIELDS_PER_FRAME * packets_received; field++)
   {
     // Decode field
     id = frame_data[field] >> 12;

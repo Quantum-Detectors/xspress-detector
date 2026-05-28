@@ -107,12 +107,19 @@ std::vector<boost::shared_ptr<Frame> > X3X2ListModeScheduler::process_frame(boos
 {
   LOG4CXX_TRACE(logger_, "Scheduler process_frame called...");
   // Deconstruct the frame into pointers to each packet
-  uint16_t* frame_data = static_cast<uint16_t *>(frame->get_data_ptr());
+  char *raw_data = static_cast<char *>(frame->get_data_ptr());
+  X3X2::X3X2ListFrameHeader* frame_header = reinterpret_cast<X3X2::X3X2ListFrameHeader*>(raw_data);
+  raw_data += sizeof(X3X2::X3X2ListFrameHeader);
+  uint16_t* frame_data = reinterpret_cast<uint16_t *>(raw_data);
+
+  uint16_t packets_received = frame_header->packets_received;
+
   std::vector<boost::shared_ptr<Frame> > complete_frames;
 
+  LOG4CXX_INFO(logger_, "Frame processing with " << packets_received << " packets");
   // Wrap a Job around each of the packets
   // Add the job to the jobQueue for processing
-  for (uint32_t index = 0; index < PKTS_PER_FRAME; index++){
+  for (uint32_t index = 0; index < packets_received; index++){
     boost::shared_ptr<X3X2ListModeProcessJob> job = this->get_job();
     job->init(index, frame_data);
     job_queue_->add(job);
@@ -120,11 +127,11 @@ std::vector<boost::shared_ptr<Frame> > X3X2ListModeScheduler::process_frame(boos
   }
   LOG4CXX_TRACE(logger_, "Jobs added to job queue");
   
-  std::vector<boost::shared_ptr <X3X2ListModeProcessJob> > completed_jobs(PKTS_PER_FRAME);
+  std::vector<boost::shared_ptr <X3X2ListModeProcessJob> > completed_jobs(packets_received);
 
   // Wait for all of the results to return (checking the resQueue)
   uint32_t processed_jobs = 0;
-  while (processed_jobs < PKTS_PER_FRAME){
+  while (processed_jobs < packets_received){
     // Place each result in order into the vector
     boost::shared_ptr<X3X2ListModeProcessJob> job = res_queue_->remove();
     completed_jobs[job->get_index()] = job;

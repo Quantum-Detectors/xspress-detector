@@ -85,11 +85,17 @@ void *X3X2ListModeFrameDecoder::get_next_message_buffer(void) {
 
     // Update position to new frame in frame buffer
     current_raw_buffer_ = buffer_manager_->get_buffer_address(current_frame_buffer_id_);
+    // Initialise the buffer header
+    LOG4CXX_INFO(logger_, "Initialising buffer " << current_frame_buffer_id_ << " header");
+    X3X2::X3X2ListFrameHeader* frame_header = reinterpret_cast<X3X2::X3X2ListFrameHeader*>(current_raw_buffer_);
+    gettime(reinterpret_cast<struct timespec*>(&(frame_header->frame_start_time)));
+    frame_header->packets_received = 0;
   }
 
   // Add offset based on where we are in the current frame
   return static_cast<void *>(
     static_cast<char *>(current_raw_buffer_) +
+    sizeof(X3X2::X3X2ListFrameHeader) +
     read_so_far_
   );
 }
@@ -123,12 +129,15 @@ const size_t X3X2ListModeFrameDecoder::get_frame_header_size(void) const {
 FrameDecoder::FrameReceiveState
 X3X2ListModeFrameDecoder::process_message(size_t bytes_received) {
   // LOG4CXX_INFO(logger_, "Processing " << bytes_received << " bytes");
+  X3X2::X3X2ListFrameHeader* frame_header = reinterpret_cast<X3X2::X3X2ListFrameHeader*>(current_raw_buffer_);
+  frame_header->packets_received++;
+
   if (read_so_far_ + bytes_received == frame_size_) {
     read_so_far_ = 0;
 
     // Just send a single TCP frame
     ready_callback_(current_frame_buffer_id_, current_frame_number_);
-
+    LOG4CXX_INFO(logger_, "Sending complete frame out [" << current_frame_buffer_id_ << "]");
     // Increment frame number
     current_frame_number_++;
 
@@ -139,6 +148,7 @@ X3X2ListModeFrameDecoder::process_message(size_t bytes_received) {
     // We didn't receive a whole TCP frame
     read_so_far_ += bytes_received;
     receive_state_ = FrameDecoder::FrameReceiveStateIncomplete;
+
   }
 
   else throw "Not Implemented: Can not handle case when too many bytes received";
@@ -159,7 +169,33 @@ const size_t X3X2ListModeFrameDecoder::get_next_message_size(void) const {
   return X3X2_MINI_TCP_FRAME_SIZE;
 }
 
-void X3X2ListModeFrameDecoder::monitor_buffers(void) {}
+void X3X2ListModeFrameDecoder::monitor_buffers(void) {
+  struct timespec current_time;
+  gettime(&current_time);
+
+  // Check the currently active frame
+  void *buffer_addr = buffer_manager_->get_buffer_address(current_frame_buffer_id_);
+  X3X2::X3X2ListFrameHeader* frame_header = reinterpret_cast<X3X2::X3X2ListFrameHeader*>(buffer_addr);
+
+  // If the time since the frame starting being filled with packets exceeds a timeout, mark
+  // the frame as incomplete and call the ready callback.
+  if (frame_header->packets_received > 0 && receive_state_ == FrameDecoder::FrameReceiveStateIncomplete){
+    if (elapsed_ms(frame_header->frame_start_time, current_time) > frame_timeout_ms_)
+    {
+      // This could be the end frame so treat it as normal
+      read_so_far_ = 0;
+
+      // Just send a single TCP frame
+      ready_callback_(current_frame_buffer_id_, current_frame_number_);
+
+      // Increment frame number
+      current_frame_number_++;
+
+      receive_state_ = FrameDecoder::FrameReceiveStateTimedout;
+      LOG4CXX_INFO(logger_, "Released incomplete frame [" << current_frame_buffer_id_ << "] with " << frame_header->packets_received << " packets");
+    }
+  }
+}
 
 void X3X2ListModeFrameDecoder::get_status(const std::string param_prefix,
                                       OdinData::IpcMessage &status_msg) {
@@ -185,4 +221,22 @@ std::string X3X2ListModeFrameDecoder::get_version_short() {
 
 std::string X3X2ListModeFrameDecoder::get_version_long() {
   return XSPRESS_DETECTOR_VERSION_STR;
+}
+
+//! Calculate and return an elapsed time in milliseconds.
+//!
+//! This method calculates and returns an elapsed time in milliseconds based on the start and
+//! end timespec structs passed as arguments.
+//!
+//! \param[in] start - start time in timespec struct format
+//! \param[in] end - end time in timespec struct format
+//! \return elapsed time between start and end in milliseconds
+//!
+unsigned int X3X2ListModeFrameDecoder::elapsed_ms(struct timespec& start, struct timespec& end)
+{
+
+  double start_ns = ((double) start.tv_sec * 1000000000) + start.tv_nsec;
+  double end_ns = ((double) end.tv_sec * 1000000000) + end.tv_nsec;
+
+  return (unsigned int)((end_ns - start_ns) / 1000000);
 }
