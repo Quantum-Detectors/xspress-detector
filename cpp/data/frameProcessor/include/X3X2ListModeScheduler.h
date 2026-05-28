@@ -36,6 +36,7 @@ namespace FrameProcessor
     virtual ~X3X2ListModeScheduler();
     void set_channels(std::vector<uint32_t> channels);
     void setup_frame_stores(uint32_t channel, const std::string& prefix, uint32_t frame_event_qty);
+    void setup_time_stores();
     boost::shared_ptr<X3X2ListModeProcessJob> get_job();
     void release_job(boost::shared_ptr<X3X2ListModeProcessJob> job);
     std::vector<boost::shared_ptr<Frame> > process_frame(boost::shared_ptr<Frame> frame);
@@ -65,7 +66,12 @@ namespace FrameProcessor
     std::map<uint32_t, boost::shared_ptr<X3X2ListModeFrameStoreTimestamp> > ts_store_ptrs_;
     std::map<uint32_t, boost::shared_ptr<X3X2ListModeFrameStoreEventHeight> > eh_store_ptrs_;
     std::map<uint32_t, boost::shared_ptr<X3X2ListModeFrameStoreResetFlag> > rf_store_ptrs_;
-//    X3X2ListModeFrameStoreTimeframe tf_store_;
+
+    // Timeframe and timestamp last value stores
+    std::map<uint32_t, uint64_t> last_timeframe_store_;
+    std::map<uint32_t, uint64_t> last_timestamp_store_;
+
+    //    X3X2ListModeFrameStoreTimeframe tf_store_;
 //    X3X2ListModeFrameStoreTimestamp ts_store_;
 //    X3X2ListModeFrameStoreEventHeight eh_store_;
 //    X3X2ListModeFrameStoreResetFlag rf_store_;

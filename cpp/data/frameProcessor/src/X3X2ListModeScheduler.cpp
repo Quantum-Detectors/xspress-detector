@@ -43,6 +43,8 @@ void X3X2ListModeScheduler::set_channels(std::vector<uint32_t> channels)
   channels_ = channels;
   channel_offset_ = channels[0];
   LOG4CXX_INFO(logger_, "Setting channels offset to [" << channel_offset_ << "].");
+
+  this->setup_time_stores();
 }
 
 void X3X2ListModeScheduler::setup_frame_stores(uint32_t channel, const std::string& prefix, uint32_t frame_event_qty)
@@ -79,6 +81,16 @@ void X3X2ListModeScheduler::setup_frame_stores(uint32_t channel, const std::stri
     boost::shared_ptr<X3X2ListModeFrameStoreResetFlag>(new X3X2ListModeFrameStoreResetFlag(reset_flag_name));
   rf_store->set_size(frame_size_rf_bytes);
   rf_store_ptrs_[channel] = rf_store;
+}
+
+void X3X2ListModeScheduler::setup_time_stores()
+{
+  last_timeframe_store_.clear();
+  last_timestamp_store_.clear();
+  for (auto iter = channels_.begin(); iter != channels_.end(); iter++){
+    last_timeframe_store_[*iter] = 0;
+    last_timestamp_store_[*iter] = 0;
+  }
 }
 
 boost::shared_ptr<X3X2ListModeProcessJob> X3X2ListModeScheduler::get_job()
@@ -149,6 +161,38 @@ std::vector<boost::shared_ptr<Frame> > X3X2ListModeScheduler::process_frame(boos
       // Ignore entire packet
       continue;
     }
+
+    // Check the first timeframe and timestamp of this job against the last saved timeframe and timestamp
+    if ((*iter)->get_first_timeframe() < last_timeframe_store_[channel])
+    {
+      LOG4CXX_INFO(
+        logger_,
+        "Channel "
+        << channel
+        << " stepped back from "
+        << last_timeframe_store_[channel]
+        << " to "
+        << (*iter)->get_first_timeframe()
+        //<< " at field " << field
+      );
+    }
+    if ((*iter)->get_first_timestamp() < last_timestamp_store_[channel])
+    {
+      LOG4CXX_INFO(
+        logger_,
+        "Channel "
+        << channel
+        << " walked back timestamp"
+        //<< field
+        << " from "
+        << last_timestamp_store_[channel]
+        << " to "
+        << (*iter)->get_first_timestamp()
+      );
+    }
+    // Now update the stored last time values
+    last_timeframe_store_[channel] = (*iter)->get_last_timeframe();
+    last_timestamp_store_[channel] = (*iter)->get_last_timestamp();
 
     if (tf_store_ptrs_.count(channel)){
       reply_frame = tf_store_ptrs_[channel]->add_timeframe((*iter)->get_tf_ptr(), (*iter)->get_event_qty());

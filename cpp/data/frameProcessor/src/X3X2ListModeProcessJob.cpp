@@ -38,6 +38,10 @@ void X3X2ListModeProcessJob::init(uint32_t index, uint16_t *frame_data)
   rf_ptr_ = reset_flag_;
   channel_ = -1;
   event_qty_ = 0;
+  first_time_frame_ = 0;
+  first_time_stamp_ = 0;
+  last_time_frame_ = 0;
+  last_time_stamp_ = 0;
 }
 
 uint32_t X3X2ListModeProcessJob::get_index() 
@@ -78,6 +82,26 @@ uint16_t *X3X2ListModeProcessJob::get_eh_ptr()
 uint8_t *X3X2ListModeProcessJob::get_rf_ptr()
 {
   return reset_flag_;
+}
+
+uint64_t X3X2ListModeProcessJob::get_first_timeframe()
+{
+  return first_time_frame_;
+}
+
+uint64_t X3X2ListModeProcessJob::get_last_timeframe()
+{
+  return last_time_frame_;
+}
+
+uint64_t X3X2ListModeProcessJob::get_first_timestamp()
+{
+  return first_time_stamp_;
+}
+
+uint64_t X3X2ListModeProcessJob::get_last_timestamp()
+{
+  return last_time_stamp_;
 }
 
 void X3X2ListModeProcessJob::process()
@@ -205,6 +229,15 @@ void X3X2ListModeProcessJob::process()
         }
         prev_time_frame = time_frame;
         prev_time_stamp = time_stamp;
+
+        if (!first_time_frame_){
+          first_time_frame_ = time_frame;
+        }
+        if (!first_time_stamp_){
+          first_time_stamp_ = time_stamp;
+        }
+        last_time_frame_ = time_frame;
+        last_time_stamp_ = time_stamp;
 
         // xspress3m_active_readout only counts events when not end of frame so we copy this logic here
         if (!end_of_frame)

@@ -33,6 +33,10 @@ namespace FrameProcessor
     uint64_t *get_ts_ptr();
     uint16_t *get_eh_ptr();
     uint8_t *get_rf_ptr();
+    uint64_t get_first_timeframe();
+    uint64_t get_last_timeframe();
+    uint64_t get_first_timestamp();
+    uint64_t get_last_timestamp();
     void process();
 
   private:
@@ -53,6 +57,11 @@ namespace FrameProcessor
 
     uint16_t channel_;
     uint32_t event_qty_;
+
+    uint64_t first_time_frame_;
+    uint64_t first_time_stamp_;
+    uint64_t last_time_frame_;
+    uint64_t last_time_stamp_;
 
     /** Pointer to logger */
     LoggerPtr logger_;
