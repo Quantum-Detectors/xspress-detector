@@ -23,7 +23,7 @@ X3X2ListModeFrameDecoder::X3X2ListModeFrameDecoder()
       current_frame_number_(X3X2ListModeFrameDecoderDefaults::frame_number),
       current_frame_buffer_id_(X3X2ListModeFrameDecoderDefaults::buffer_id),
       header_size_(X3X2ListModeFrameDecoderDefaults::header_size),
-      frame_size_(X3X2ListModeFrameDecoderDefaults::max_size * PKTS_PER_FRAME),
+      frame_size_(X3X2ListModeFrameDecoderDefaults::header_size + X3X2ListModeFrameDecoderDefaults::max_size * PKTS_PER_FRAME),
       num_buffers_(X3X2ListModeFrameDecoderDefaults::num_buffers),
       frames_dropped_(0), frames_sent_(0), read_so_far_(0),
       receive_state_(FrameDecoder::FrameReceiveStateEmpty) {
@@ -132,7 +132,7 @@ X3X2ListModeFrameDecoder::process_message(size_t bytes_received) {
   X3X2::X3X2ListFrameHeader* frame_header = reinterpret_cast<X3X2::X3X2ListFrameHeader*>(current_raw_buffer_);
   frame_header->packets_received++;
 
-  if (read_so_far_ + bytes_received == frame_size_) {
+  if (read_so_far_ + bytes_received == (frame_size_ - header_size_)) {
     read_so_far_ = 0;
 
     // Just send a single TCP frame
@@ -144,7 +144,7 @@ X3X2ListModeFrameDecoder::process_message(size_t bytes_received) {
     receive_state_ = FrameDecoder::FrameReceiveStateComplete;
   }
 
-  else if (read_so_far_ + bytes_received < frame_size_) {
+  else if (read_so_far_ + bytes_received < (frame_size_ - header_size_)) {
     // We didn't receive a whole TCP frame
     read_so_far_ += bytes_received;
     receive_state_ = FrameDecoder::FrameReceiveStateIncomplete;
