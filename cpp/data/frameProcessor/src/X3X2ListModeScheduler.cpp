@@ -36,7 +36,7 @@ void X3X2ListModeScheduler::set_number_of_time_frames(uint32_t time_frames)
   num_time_frames_ = time_frames;
 }
 
-void X3X2ListModeScheduler::set_channels(std::vector<uint32_t> channels)
+void X3X2ListModeScheduler::set_channels(std::vector<uint32_t> channels, std::vector<uint32_t> marker_channels)
 {
   std::stringstream ss;
   ss << "Registering channels [";
@@ -48,6 +48,14 @@ void X3X2ListModeScheduler::set_channels(std::vector<uint32_t> channels)
   channels_ = channels;
   channel_offset_ = channels[0];
   LOG4CXX_INFO(logger_, "Setting channels offset to [" << channel_offset_ << "].");
+  marker_channels_ = marker_channels;
+  std::stringstream mss;
+  mss << "Registering marker channels [";
+  for (auto iter = marker_channels.begin(); iter != marker_channels.end(); iter++){
+    mss << " " << *iter;
+  }
+  mss << "]";
+  LOG4CXX_INFO(logger_, mss.str());
 
   this->reset_time_stores();
 }
@@ -55,10 +63,14 @@ void X3X2ListModeScheduler::set_channels(std::vector<uint32_t> channels)
 void X3X2ListModeScheduler::setup_frame_stores(uint32_t channel, const std::string& prefix, uint32_t frame_event_qty)
 {
   LOG4CXX_INFO(logger_, "Setting up frame store channel [" << channel << "] with prefix '" << prefix << "' for [" << frame_event_qty << "] events.");
-  std::string timeframe_name = prefix + std::to_string(channel) + "_time_frame";
-  std::string timestamp_name = prefix + std::to_string(channel) + "_time_stamp";
-  std::string event_height_name = prefix + std::to_string(channel) + "_event_height";
-  std::string reset_flag_name = prefix + std::to_string(channel) + "_reset_flag";
+  uint32_t store_channel = channel;
+  if (std::find(marker_channels_.begin(), marker_channels_.end(), channel) != marker_channels_.end()){
+    store_channel = channel - channel_offset_ - 2;
+  }
+  std::string timeframe_name = prefix + std::to_string(store_channel) + "_time_frame";
+  std::string timestamp_name = prefix + std::to_string(store_channel) + "_time_stamp";
+  std::string event_height_name = prefix + std::to_string(store_channel) + "_event_height";
+  std::string reset_flag_name = prefix + std::to_string(store_channel) + "_reset_flag";
 
   // Size of each memory block in bytes based on the number of events we want to
   // store in each frame

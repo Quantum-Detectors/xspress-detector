@@ -35,7 +35,7 @@ namespace FrameProcessor
     X3X2ListModeScheduler();
     virtual ~X3X2ListModeScheduler();
     void set_number_of_time_frames(uint32_t time_frames);
-    void set_channels(std::vector<uint32_t> channels);
+    void set_channels(std::vector<uint32_t> channels, std::vector<uint32_t> marker_channels);
     void setup_frame_stores(uint32_t channel, const std::string& prefix, uint32_t frame_event_qty);
     void reset_time_stores();
     boost::shared_ptr<X3X2ListModeProcessJob> get_job();
@@ -52,6 +52,7 @@ namespace FrameProcessor
     /** Channels and offset */
     uint32_t channel_offset_;
     std::vector<uint32_t> channels_;
+    std::vector<uint32_t> marker_channels_;
 
     /** Acquisition properties */
     uint32_t num_time_frames_;

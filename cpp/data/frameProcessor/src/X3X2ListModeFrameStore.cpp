@@ -25,7 +25,7 @@ namespace FrameProcessor {
   name_ = name;
 
   // Setup logging for the class
-  logger_ = Logger::getLogger("FP.X3X2ListModeProcessPlugin");
+  logger_ = Logger::getLogger("FP.X3X2ListModeFrameStore");
   LOG4CXX_INFO(logger_, "[" << name_ << "]" << " Created X3X2ListModeMemoryBlock");
 }
 

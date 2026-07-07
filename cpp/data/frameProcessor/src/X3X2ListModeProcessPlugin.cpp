@@ -161,7 +161,7 @@ void X3X2ListModeProcessPlugin::set_channels(std::vector<uint32_t> channels)
   LOG4CXX_INFO(logger_, "Configured for " << num_channels_ << " channels");
 
   // Send the channels to the scheduler
-  sch_.set_channels(channels_);
+  sch_.set_channels(channels_, marker_channels_);
 
   reset_channel_statistics();
 
