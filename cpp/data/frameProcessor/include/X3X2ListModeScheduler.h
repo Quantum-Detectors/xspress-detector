@@ -44,6 +44,7 @@ namespace FrameProcessor
     void process_task();
     std::vector<boost::shared_ptr<Frame> > flush();
     void reset_acquisition();
+    bool get_acquisition_complete();
 
   private:
     /** Pointer to logger */
@@ -56,6 +57,7 @@ namespace FrameProcessor
 
     /** Acquisition properties */
     uint32_t num_time_frames_;
+    bool acquisition_complete_;
 
     /** Pointer to worker queue thread */
     boost::thread *thread_[PROCESS_THREADS];

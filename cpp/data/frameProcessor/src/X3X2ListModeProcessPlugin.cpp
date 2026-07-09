@@ -215,6 +215,7 @@ void X3X2ListModeProcessPlugin::reset_acquisition()
   clear_reset_flag_memory_blocks();
 
   acquisition_complete_ = false;
+  sch_.reset_acquisition();
 
   reset_channel_statistics();
 }
@@ -462,6 +463,10 @@ void X3X2ListModeProcessPlugin::process_frame(boost::shared_ptr <Frame> frame)
     LOG4CXX_DEBUG_LEVEL(2, logger_, "Parallel processing - Pushing " << frames.size() << " frames.");
     for (auto iter = frames.begin(); iter != frames.end(); iter++){
       this->push(*iter);
+    }
+    if (!acquisition_complete_ && sch_.get_acquisition_complete()){
+      acquisition_complete_ = true;
+      this->notify_end_of_acquisition();
     }
   } else {
 

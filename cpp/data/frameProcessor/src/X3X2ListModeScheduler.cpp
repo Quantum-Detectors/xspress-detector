@@ -8,7 +8,7 @@
 
 namespace FrameProcessor {
 
-X3X2ListModeScheduler::X3X2ListModeScheduler()
+X3X2ListModeScheduler::X3X2ListModeScheduler() : acquisition_complete_(false)
 {
   // Setup logging for the class
   logger_ = Logger::getLogger("FP.X3X2ListModeScheduler");
@@ -261,7 +261,8 @@ std::vector<boost::shared_ptr<Frame> > X3X2ListModeScheduler::process_frame(boos
           LOG4CXX_INFO(logger_, "FLUSHING !!!!  Acquisition of " << num_time_frames_ << " frames completed for all channels");
           std::vector<boost::shared_ptr<Frame> > flushed_frames = this->flush();
           complete_frames.insert(complete_frames.end(), flushed_frames.begin(), flushed_frames.end());
-          this->reset_acquisition();
+          acquisition_complete_ = true;
+//          this->reset_acquisition();
         }
       }
     }
@@ -324,6 +325,7 @@ std::vector<boost::shared_ptr<Frame> > X3X2ListModeScheduler::flush()
 
 void X3X2ListModeScheduler::reset_acquisition()
 {
+  LOG4CXX_INFO(logger_, "Reset acquisition called");
   for (auto iter = tf_store_ptrs_.begin(); iter != tf_store_ptrs_.end(); ++iter){
     iter->second->reset_frame_count();
   }
@@ -337,6 +339,13 @@ void X3X2ListModeScheduler::reset_acquisition()
     iter->second->reset_frame_count();
   }
   this->reset_time_stores();
+
+  acquisition_complete_ = false;
+}
+
+bool X3X2ListModeScheduler::get_acquisition_complete()
+{
+  return acquisition_complete_;
 }
 
 }
