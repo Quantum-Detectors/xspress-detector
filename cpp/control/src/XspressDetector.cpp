@@ -397,6 +397,8 @@ int XspressDetector::restoreSettings()
 
   // Configure playback
   if (status == XSP_STATUS_OK){
+    // TODO: remove when done
+    playback_file_ = std::string("/etc/xspress3/calibration/initial/playback/X3X2PBData1M.d16");
     // An empty string means no playback
     if (playback_file_.length() > 0)
     {

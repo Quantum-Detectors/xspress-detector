@@ -1596,7 +1596,7 @@ int LibXspressWrapper::load_playback(char *filename)
 
   // TODO: handle Xspress 4 loading as it is different
   int src[2] = {0, 1};
-  int file_streams = 0;
+  int file_streams = 2;
   int str0_dig = 0;
   int smooth_join = 0;
   int enb_higher_chan = 1;
