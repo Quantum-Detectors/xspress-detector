@@ -80,13 +80,17 @@ void *X3X2ListModeFrameDecoder::get_next_message_buffer(void) {
   // only increment buffer when frame is complete
   if (receive_state_ != FrameDecoder::FrameReceiveStateIncomplete) {
     // Get the buffer ID from the circular buffer
-    if (current_frame_buffer_id_ + 1 >= num_buffers_) current_frame_buffer_id_ = 0;
-    else current_frame_buffer_id_++;
+    if (empty_buffer_queue_.empty()){
+      LOG4CXX_ERROR(logger_, "Running out of shared memory! Data loss");
+    } else {
+      current_frame_buffer_id_ = empty_buffer_queue_.front();
+      empty_buffer_queue_.pop();
+    }
 
     // Update position to new frame in frame buffer
     current_raw_buffer_ = buffer_manager_->get_buffer_address(current_frame_buffer_id_);
     // Initialise the buffer header
-    LOG4CXX_INFO(logger_, "Initialising buffer " << current_frame_buffer_id_ << " header");
+    LOG4CXX_DEBUG_LEVEL(1, logger_, "Initialising buffer " << current_frame_buffer_id_ << " header");
     X3X2::X3X2ListFrameHeader* frame_header = reinterpret_cast<X3X2::X3X2ListFrameHeader*>(current_raw_buffer_);
     gettime(reinterpret_cast<struct timespec*>(&(frame_header->frame_start_time)));
     frame_header->packets_received = 0;
@@ -137,7 +141,7 @@ X3X2ListModeFrameDecoder::process_message(size_t bytes_received) {
 
     // Just send a single TCP frame
     ready_callback_(current_frame_buffer_id_, current_frame_number_);
-    LOG4CXX_INFO(logger_, "Sending complete frame out [" << current_frame_buffer_id_ << "]");
+    LOG4CXX_DEBUG_LEVEL(1, logger_, "Sending complete frame out [" << current_frame_buffer_id_ << "]");
     // Increment frame number
     current_frame_number_++;
 

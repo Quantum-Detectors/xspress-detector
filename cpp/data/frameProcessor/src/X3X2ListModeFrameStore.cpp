@@ -70,7 +70,7 @@ void X3X2ListModeFrameStore::reset_frame_count()
 
 boost::shared_ptr <Frame> X3X2ListModeFrameStore::to_frame()
 {
-  LOG4CXX_INFO(logger_, "[" << name_ << "]" << " Getting complete frame " << frame_count_ << " of " << num_bytes_ << " bytes");
+  LOG4CXX_DEBUG_LEVEL(1, logger_, "[" << name_ << "]" << " Getting complete frame " << frame_count_ << " of " << num_bytes_ << " bytes");
   boost::shared_ptr <Frame> frame;
 
   // Create the frame around the complete block

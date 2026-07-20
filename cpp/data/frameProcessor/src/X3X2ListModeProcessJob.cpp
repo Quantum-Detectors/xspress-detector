@@ -262,7 +262,7 @@ void X3X2ListModeProcessJob::process()
             event_qty_++;
           }
         } else {
-          LOG4CXX_INFO(logger_, "End of frame marker channel [" << channel_ << "] at index [" << field << "]!");
+          LOG4CXX_DEBUG_LEVEL(1, logger_, "End of frame marker channel [" << channel_ << "] at index [" << field << "]!");
           end_of_frame_marker_ = true;
         }
 //        else if (!acquisition_complete_)
