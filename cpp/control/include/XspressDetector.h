@@ -77,6 +77,9 @@ public:
   int sendSoftwareTrigger();
   void reconnectRequired();
   bool getReconnectStatus();
+  void setPlaybackFile(std::string playback_file);
+  std::string getPlaybackFile();
+
 
   // Getter and Setters
   void setXspNumCards(int num_cards);
@@ -226,6 +229,8 @@ private:
   std::string                   xsp_mode_;
   /** DAQ endpoints */
   std::vector<std::string>      xsp_daq_endpoints_;
+  /** Playback file to load */
+  std::string                   playback_file_;
   
   /** Number of frames read out by each channel */
   std::vector<int32_t>          xsp_status_frames_;

@@ -1031,4 +1031,10 @@ int LibXspressSimulator::setup_marker_channels()
   return XSP_STATUS_OK;
 }
 
+int LibXspressSimulator::load_playback(char *filename)
+{
+  // This is a no op for the simulator
+  return XSP_STATUS_OK;
+}
+
 } /* namespace Xspress */

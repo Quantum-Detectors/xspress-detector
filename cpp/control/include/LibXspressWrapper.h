@@ -199,6 +199,8 @@ public:
   int set_channel_sources(int run_flags);
   int setup_marker_channels();
 
+  int load_playback(char *filename);
+
   static const int runFlag_MCA_SPECTRA_;
   static const int runFlag_SCALERS_ONLY_;
   static const int runFlag_PLAYB_MCA_SPECTRA_;

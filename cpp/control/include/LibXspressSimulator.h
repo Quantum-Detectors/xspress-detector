@@ -163,6 +163,8 @@ public:
   int set_channel_sources(int run_flags);
   int setup_marker_channels();
 
+  int load_playback(char *filename);
+
 private:
   /** String representation of trigger modes */
   std::map<std::string, int>    trigger_modes_;

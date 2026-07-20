@@ -192,6 +192,8 @@ public:
   virtual int set_channel_sources(int run_flags) = 0;
   virtual int setup_marker_channels() = 0;
 
+  virtual int load_playback(char *filename) = 0;
+
   static const int runFlag_MCA_SPECTRA_;
   static const int runFlag_SCALERS_ONLY_;
   static const int runFlag_PLAYB_MCA_SPECTRA_;

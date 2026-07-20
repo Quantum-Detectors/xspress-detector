@@ -27,6 +27,7 @@ XspressDetector::XspressDetector(bool simulation) :
     acquiring_(false),
     reconnect_required_(false),
     acq_failed_(false),
+    playback_file_(""),
     xsp_num_cards_(0),
     xsp_num_tf_(0),
     xsp_base_IP_(""),
@@ -394,6 +395,20 @@ int XspressDetector::restoreSettings()
     }
   }
 
+  // Configure playback
+  if (status == XSP_STATUS_OK){
+    // An empty string means no playback
+    if (playback_file_.length() > 0)
+    {
+      std::vector<char> playback_file_vec_(playback_file_.begin(), playback_file_.end());
+      LOG4CXX_INFO(logger_, "Loading playback: " << playback_file_);
+      status = detector_->load_playback(playback_file_vec_.data());
+      if (status != XSP_STATUS_OK){
+        setErrorString(detector_->getErrorString());
+      }
+    }
+  }
+
   // Read existing SCA params
   if (status == XSP_STATUS_OK){
     status = readSCAParams();
@@ -648,6 +663,17 @@ void XspressDetector::reconnectRequired()
 bool XspressDetector::getReconnectStatus()
 {
   return reconnect_required_;
+}
+
+void XspressDetector::setPlaybackFile(std::string playback_file)
+{
+  playback_file_ = playback_file;
+  reconnectRequired();
+}
+
+std::string XspressDetector::getPlaybackFile()
+{
+  return playback_file_;
 }
 
 void XspressDetector::setXspNumCards(int num_cards)

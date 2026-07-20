@@ -1583,4 +1583,49 @@ int LibXspressWrapper::setup_marker_channels()
   return XSP_STATUS_OK;
 }
 
+/**
+ * @brief Load playback from a file
+ *
+ * @param filename Filename to load playback data from
+ * @return int Return code
+ */
+int LibXspressWrapper::load_playback(char *filename)
+{
+  int status = XSP_STATUS_OK;
+  int xsp_status;
+
+  // TODO: handle Xspress 4 loading as it is different
+  int src[2] = {0, 1};
+  int file_streams = 0;
+  int str0_dig = 0;
+  int smooth_join = 0;
+  int enb_higher_chan = 1;
+  int no_retry = 0;
+  int xspress4_dig = 0;
+  int glob_reset = 0;
+
+  xsp_status = xsp3_playback_load_x3(
+    xsp_handle_,
+    -1,
+    filename,
+    src,
+    file_streams,
+    str0_dig,
+    smooth_join,
+    enb_higher_chan,
+    no_retry,
+    xspress4_dig,
+    glob_reset
+  );
+
+  if (xsp_status < 0)
+  {
+    checkErrorCode("Error loading playback", xsp_status);
+    status = XSP_STATUS_ERROR;
+  }
+
+  return status;
+}
+
+
 } /* namespace Xspress */
