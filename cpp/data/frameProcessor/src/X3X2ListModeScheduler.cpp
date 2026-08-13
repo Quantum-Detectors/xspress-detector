@@ -177,7 +177,8 @@ std::vector<boost::shared_ptr<Frame> > X3X2ListModeScheduler::process_frame(boos
     uint16_t channel = (*iter)->get_channel() + channel_offset_;
     // Check we have the right channel (and ignore marker channels for now)
     if (std::find(channels_.begin(), channels_.end(), channel) == channels_.end()) {
-      // Ignore entire packet
+      // Ignore entire packet, but return the job to the pool
+      this->release_job(*iter);
       continue;
     }
 

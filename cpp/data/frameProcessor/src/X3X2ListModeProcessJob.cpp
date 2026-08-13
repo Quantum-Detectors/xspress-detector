@@ -26,7 +26,12 @@ X3X2ListModeProcessJob::X3X2ListModeProcessJob() :
 
 X3X2ListModeProcessJob::~X3X2ListModeProcessJob()
 {
-  LOG4CXX_TRACE(logger_, "X3X2ListModeProcessJob destructor.");
+  LOG4CXX_INFO(logger_, "X3X2ListModeProcessJob destructor.");
+  // Free memory
+  free(timeframe_);
+  free(timestamp_);
+  free(event_height_);
+  free(reset_flag_);
 }
 
 void X3X2ListModeProcessJob::init(uint32_t index, uint16_t *frame_data)
