@@ -249,21 +249,23 @@ std::vector<boost::shared_ptr<Frame> > X3X2ListModeScheduler::process_frame(boos
 
     // Now check for an end of frame marker
     if ((*iter)->get_eof_marker()){
-      if ((*iter)->get_last_timeframe() + 1 >= num_time_frames_){
-        LOG4CXX_INFO(logger_, "Acquisition of " << num_time_frames_ << " frames complete for channel " << channel);
-        completed_channels_[channel] = true;
+      if (num_time_frames_ > 0){
+        if ((*iter)->get_last_timeframe() + 1 >= num_time_frames_){
+          LOG4CXX_INFO(logger_, "Acquisition of " << num_time_frames_ << " frames complete for channel " << channel);
+          completed_channels_[channel] = true;
 
-        // Check if every channel is now finished
-        uint16_t completed_channels = 0;
-        for (auto const& it : completed_channels_){
-          if (it.second) completed_channels++;
-        }
-        if (completed_channels == channels_.size()){
-          LOG4CXX_INFO(logger_, "FLUSHING !!!!  Acquisition of " << num_time_frames_ << " frames completed for all channels");
-          std::vector<boost::shared_ptr<Frame> > flushed_frames = this->flush();
-          complete_frames.insert(complete_frames.end(), flushed_frames.begin(), flushed_frames.end());
-          acquisition_complete_ = true;
+          // Check if every channel is now finished
+          uint16_t completed_channels = 0;
+          for (auto const& it : completed_channels_){
+            if (it.second) completed_channels++;
+          }
+          if (completed_channels == channels_.size()){
+            LOG4CXX_INFO(logger_, "FLUSHING !!!!  Acquisition of " << num_time_frames_ << " frames completed for all channels");
+            std::vector<boost::shared_ptr<Frame> > flushed_frames = this->flush();
+            complete_frames.insert(complete_frames.end(), flushed_frames.begin(), flushed_frames.end());
+            acquisition_complete_ = true;
 //          this->reset_acquisition();
+          }
         }
       }
     }
