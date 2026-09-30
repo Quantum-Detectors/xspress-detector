@@ -14,7 +14,6 @@ target_link_libraries(XspressListModeProcessPlugin ${Boost_LIBRARIES} ${LOG4CXX_
 add_library(X3X2ListModeProcessPlugin SHARED
         X3X2ListModeProcessPlugin.cpp
         X3X2ListModeProcessPluginLib.cpp
-        X3X2ListModeMemoryBlocks.cpp
         X3X2ListModeProcessJob.cpp
         X3X2ListModeScheduler.cpp
         X3X2ListModeFrameStore.cpp)

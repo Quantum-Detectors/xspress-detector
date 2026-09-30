@@ -12,7 +12,7 @@ X3X2ListModeScheduler::X3X2ListModeScheduler() : acquisition_complete_(false)
 {
   // Setup logging for the class
   logger_ = Logger::getLogger("FP.X3X2ListModeScheduler");
-  LOG4CXX_INFO(logger_, "LATRDProcessCoordinator constructor.");
+  LOG4CXX_INFO(logger_, "X3X2ListModeScheduler constructor.");
 
   // Create the work queue for processing jobs
   job_queue_ = boost::shared_ptr<WorkQueue<boost::shared_ptr<X3X2ListModeProcessJob> > >(new WorkQueue<boost::shared_ptr<X3X2ListModeProcessJob> >);
