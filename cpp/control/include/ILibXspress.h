@@ -191,6 +191,7 @@ public:
   virtual int enable_list_mode_resets() = 0;
   virtual int set_channel_sources(int run_flags) = 0;
   virtual int setup_marker_channels() = 0;
+  virtual int set_user_ts_sync_mode(int mode) = 0;
 
   static const int runFlag_MCA_SPECTRA_;
   static const int runFlag_SCALERS_ONLY_;

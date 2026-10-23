@@ -1378,6 +1378,10 @@ int LibXspressWrapper::set_trigger_input(bool list_mode)
 int LibXspressWrapper::setup_clocks(int num_cards, int reset_ts)
 {
   int status = XSP_STATUS_OK;
+
+  // Only needed for X3X2
+  if (xsp3_is_xsp3m_plus(0) == 0) return status;
+
   int xsp_status;
   int RESET_TS = 0;
   // reset the TS if the reset_ts is 1
@@ -1386,33 +1390,28 @@ int LibXspressWrapper::setup_clocks(int num_cards, int reset_ts)
   }
 
   // Need to set up clocks specifically for X3X2 models for triggering to work
-  if (xsp3_is_xsp3m_plus(0) == 1)
+  LOG4CXX_DEBUG_LEVEL(1, logger_, "Xspress wrapper configuring X3X2 midplane clock");
+  xsp_status = xsp3_clocks_setup(
+    xsp_handle_,
+    -1,
+    XSP4_CLK_SRC_MIDPLN_LMK61E2, 
+    XSP3_CLK_FLAGS_NO_DITHER | RESET_TS,
+    0
+  );
+  // < 0 for error, 0 for Xspress 3 success and clock frequency for other models
+  if (xsp_status < 0)
   {
-    LOG4CXX_DEBUG_LEVEL(1, logger_, "Xspress wrapper configuring X3X2 midplane clock");
-    xsp_status = xsp3_clocks_setup(
-      xsp_handle_,
-      -1,
-      XSP4_CLK_SRC_MIDPLN_LMK61E2, 
-      XSP3_CLK_FLAGS_NO_DITHER | RESET_TS,
-      0
-    );
-    // < 0 for error, 0 for Xspress 3 success and clock frequency for other models
-    if (xsp_status < 0)
-    {
-      checkErrorCode("Error configuring X3X2 clocks", xsp_status);
-      status = XSP_STATUS_ERROR;
-    }
-
-    LOG4CXX_DEBUG_LEVEL(1, logger_, "Xspress wrapper configuring X3X2 sync mode");
-    xsp_status = xsp3_set_sync_mode(xsp_handle_, XSP3_SYNC_MODE(XSP3_SYNC_MIDPLANE), 0, 0);
-    if (xsp_status != XSP3_OK)
-    {
-      checkErrorCode("Error configuring X3X2 sync mode", xsp_status);
-      status = XSP_STATUS_ERROR;
-    }
+    checkErrorCode("Error configuring X3X2 clocks", xsp_status);
+    status = XSP_STATUS_ERROR;
   }
-  // We don't setup clocks if it is not X3X2
-  return status;
+
+  LOG4CXX_DEBUG_LEVEL(1, logger_, "Xspress wrapper configuring X3X2 sync mode");
+  xsp_status = xsp3_set_sync_mode(xsp_handle_, XSP3_SYNC_MODE(XSP3_SYNC_MIDPLANE), 0, 0);
+  if (xsp_status != XSP3_OK)
+  {
+    checkErrorCode("Error configuring X3X2 sync mode", xsp_status);
+    status = XSP_STATUS_ERROR;
+  }
 }
 
 /**
@@ -1579,6 +1578,36 @@ int LibXspressWrapper::setup_marker_channels()
     if (chan % 2 == 0) xsp_status = xsp3_setup_marker_chan(xsp_handle_, chan, chan_cont, 1, 1, 0);
     else xsp_status = xsp3_setup_marker_chan(xsp_handle_, chan, chan_cont, 1, 1, 1);
   }
+
+  return XSP_STATUS_OK;
+}
+
+/**
+ *
+ * @brief Configure the timestamp sync mode
+ *
+ * This controls how the timestamping is controlled on the X3X2.
+ * 
+ * Note: this should be done after setting up clocks.
+ * 
+ * There are the following options:
+ *
+ * XSP3_USER_TSYNC_FRAMING         0  //!< User time stamp Sync in run mode uses framing input to reset user (output) time stamp.
+ * XSP3_USER_TSYNC_STANDALONE      1  //!< User time stamp Sync in run mode uses repeating sync signal within each box to reset user (output) time stamp.
+ * XSP3_USER_TSYNC_TTL2            2  //!< User time stamp Sync uses the internal TTL_IN2 signal, selected using xsp3_set_glob_trigger_select()
+ * XSP3_USER_TSYNC_TTL3            3  //!< User time stamp Sync uses the internal TTL_IN2 signal, selected using xsp3_set_glob_trigger_select()
+ * XSP3_USER_TSYNC_TEST_GLOB_RST   4  //!< User time stamp Sync in test mode reuses Global reset extracted from playback data
+ * XSP3_USER_TSYNC_TEST_GLOB_RST0  5  //!< User time stamp Sync in test mode reuses Global reset extracted from playback data of channel 0 for all channels
+ * XSP3_USER_TSYNC_TEST_STANDALONE 6  //!< User time stamp Sync in test mode uses repeating sync signal within each box to reset user (output) time stamp.
+ *
+ * @return int Status whether we configured the channels successfully
+ */
+int LibXspressWrapper::set_user_ts_sync_mode(int mode)
+{
+  LOG4CXX_INFO(logger_, "Configuring TS sync mode to: " << mode);
+
+  int status = XSP_STATUS_OK;
+  int xsp_status = xsp3_set_user_ts_sync_mode(xsp_handle_, -1, mode);
 
   return XSP_STATUS_OK;
 }

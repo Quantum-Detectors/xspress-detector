@@ -162,6 +162,7 @@ public:
   int enable_list_mode_resets();
   int set_channel_sources(int run_flags);
   int setup_marker_channels();
+  int set_user_ts_sync_mode(int mode);
 
 private:
   /** String representation of trigger modes */

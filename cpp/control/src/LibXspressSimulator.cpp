@@ -1031,4 +1031,10 @@ int LibXspressSimulator::setup_marker_channels()
   return XSP_STATUS_OK;
 }
 
+int LibXspressSimulator::set_user_ts_sync_mode(int mode)
+{
+  // This is a no op for the simulator
+  return XSP_STATUS_OK;
+}
+
 } /* namespace Xspress */

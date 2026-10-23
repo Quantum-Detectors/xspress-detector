@@ -258,6 +258,31 @@ int XspressDetector::setupControlRegister()
   return status;
 }
 
+/**
+ * @brief Set up the user TS sync mode.
+ * 
+ * This controls what resets the timestamp.
+ * 
+ * @return int Return code
+ */
+int XspressDetector::setupUserTsSyncMode()
+{
+  // 
+  int status = XSP_STATUS_OK;
+  if (checkConnected()){
+    LOG4CXX_INFO(logger_, "Setting up user TS sync mode");
+    status = detector_->set_user_ts_sync_mode(XSP3_USER_TSYNC_STANDALONE);
+    if (status != XSP_STATUS_OK)
+    {
+      setErrorString("Failed to configure user TS sync mode");
+    }
+  } else {
+    LOG4CXX_INFO(logger_, "Cannot set up user TS sync mode as not connected");
+    status = XSP_STATUS_ERROR;
+  }
+  return status;
+}
+
 int XspressDetector::enableDAQ()
 {
   int status = XSP_STATUS_OK;

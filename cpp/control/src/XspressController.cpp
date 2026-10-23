@@ -798,6 +798,14 @@ void XspressController::configureCommand(OdinData::IpcMessage& config, OdinData:
       // Command failed, return error with any error string
       reply.set_nack(xsp_->getErrorString());
       setError(xsp_->getErrorString());
+    } else {
+      // Configure the user TS sync mode
+      status = xsp_->setupUserTsSyncMode();
+    }
+    if (status != XSP_STATUS_OK){
+      // Command failed, return error with any error string
+      reply.set_nack(xsp_->getErrorString());
+      setError(xsp_->getErrorString());
     }
   }
 
