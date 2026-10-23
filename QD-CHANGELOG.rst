@@ -3,6 +3,18 @@ Change log
 
 Changes made by Quantum Detectors to this repository are recorded below.
 
+Unreleased
+----------
+
+Changed:
+
+- Updated the X3X2 list mode process plugin to improve the performance. The
+  list mode TCP frames are now batched up and processed in multiple threads
+  per frame processor to be able to handle millions of events per second.
+  Tested with 4 Mcps playback data for an 8 channel system on an Intel Xeon
+  Silver 4510 processor.
+
+
 0.5.0+qd0.10
 ------------
 

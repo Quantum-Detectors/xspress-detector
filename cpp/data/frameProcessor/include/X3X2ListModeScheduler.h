@@ -83,11 +83,6 @@ namespace FrameProcessor
     // Completed channels
     std::map<uint32_t, bool> completed_channels_;
 
-
-    //    X3X2ListModeFrameStoreTimeframe tf_store_;
-//    X3X2ListModeFrameStoreTimestamp ts_store_;
-//    X3X2ListModeFrameStoreEventHeight eh_store_;
-//    X3X2ListModeFrameStoreResetFlag rf_store_;
   };
 }
 
