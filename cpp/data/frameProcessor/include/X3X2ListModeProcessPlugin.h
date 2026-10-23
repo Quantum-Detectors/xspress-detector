@@ -12,7 +12,7 @@ using namespace log4cxx::helpers;
 
 #include "FrameProcessorPlugin.h"
 #include "XspressDefinitions.h"
-#include "X3X2ListModeMemoryBlocks.h"
+#include "X3X2ListModeScheduler.h"
 #include "gettime.h"
 
 namespace FrameProcessor
@@ -46,17 +46,6 @@ namespace FrameProcessor
     void set_frame_size(uint32_t num_events);
     void setup_memory_allocation();
 
-    // Memory blocks
-    void clear_timeframe_memory_blocks();
-    void clear_timestamp_memory_blocks();
-    void clear_event_height_memory_blocks();
-    void clear_reset_flag_memory_blocks();
-
-    void flush_timeframe_memory_blocks();
-    void flush_timestamp_memory_blocks();
-    void flush_event_height_memory_blocks();
-    void flush_reset_flag_memory_blocks();
-
     void setup_channel_memory_blocks(uint32_t channel);
 
     void reset_channel_statistics();
@@ -84,12 +73,6 @@ namespace FrameProcessor
     std::map<uint32_t, uint64_t> prev_time_frames_;
     std::map<uint32_t, uint64_t> prev_time_stamps_;
 
-    // Memory blocks for event fields
-    std::map<uint32_t, boost::shared_ptr<X3X2ListModeTimeframeMemoryBlock> > timeframe_memory_ptrs_;
-    std::map<uint32_t, boost::shared_ptr<X3X2ListModeTimestampMemoryBlock> > timestamp_memory_ptrs_;
-    std::map<uint32_t, boost::shared_ptr<X3X2ListModeEventHeightMemoryBlock> > event_height_memory_ptrs_;
-    std::map<uint32_t, boost::shared_ptr<X3X2ListModeResetFlagMemoryBlock> > reset_flag_memory_ptrs_;
-
     std::map<uint32_t, std::vector<uint32_t> > packet_headers_;
 
     static const std::string CONFIG_CHANNELS;
@@ -98,6 +81,8 @@ namespace FrameProcessor
     static const std::string CONFIG_FLUSH_ACQUISITION;
     static const std::string CONFIG_FRAME_SIZE;
     static const std::string CONFIG_TIME_FRAMES;
+
+    X3X2ListModeScheduler sch_;
 
     /** Pointer to logger */
     LoggerPtr logger_;
